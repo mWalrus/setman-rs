@@ -9,19 +9,12 @@ use colored::*;
 use serde::{Deserialize};
 
 mod readline;
+mod fileman;
 
 #[derive(Deserialize)]
-struct Applications {
-    items: Vec<Item>,
+struct Apps {
+    items: Vec<fileman::Application>,
 }
-
-#[derive(Deserialize)]
-struct Item {
-    name: String,
-    config_path: String,
-    file_names: Vec<String>,
-}
-
 
 fn take_new_application() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());

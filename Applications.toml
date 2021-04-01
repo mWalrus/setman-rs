@@ -1,0 +1,3 @@
+items = [
+  {name = "neovim", config_path = "~/.config/nvim", file_names = ["coc-settings.json", "init.vim"]}
+]
