@@ -26,9 +26,9 @@ pub fn copy_files(source: &str, dest: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn remove_files(path: &str::io::Result<()> {
+pub fn remove_files(path: &str) {
     let files = fs::read_dir(path);
     for file in files {
-        println!("{}", file);
+        println!("{:?}", file);
     }
 }
