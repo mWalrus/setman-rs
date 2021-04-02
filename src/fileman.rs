@@ -20,3 +20,15 @@ pub fn get_apps() -> Vec<Application> {
     let parsed: Vec<Application> = toml::from_str(&file_content).unwrap();
     parsed
 }
+
+pub fn copy_files(source: &str, dest: &str) -> std::io::Result<()> {
+    fs::copy(source, dest)?;
+    Ok(())
+}
+
+pub fn remove_files(path: &str::io::Result<()> {
+    let files = fs::read_dir(path);
+    for file in files {
+        println!("{}", file);
+    }
+}
