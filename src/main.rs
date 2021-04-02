@@ -3,18 +3,13 @@ extern crate colored;
 extern crate toml;
 extern crate serde;
 
-use std::process::exit;
-use colored::*;
-use serde::Deserialize;
-
 mod readline;
 mod fileman;
 mod args;
 
-#[derive(Deserialize)]
-struct Apps {
-    items: Vec<fileman::Application>,
-}
+use std::process::exit;
+use colored::*;
+use serde::Deserialize;
 
 fn take_new_application() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());
@@ -25,36 +20,50 @@ fn take_new_application() {
     println!("App name: {}\nPath: {}\nFiles: {}", app_name, app_config_path, config_files);
 }
 
-fn sync_application() {
+fn sync_application(app_name: &str) {
     println!("sync application");
+    let mut a = fileman::Apps::new();
+    let app = a.find_app_by_name(app_name);
+    println!("{}", app.config_path);
 }
 
 fn sync_all_applications() {
     println!("sync all applications");
 }
 
-fn install_application() {
+fn install_application(app_name: &str) {
     println!("install application");
+
 }
 
-fn uninstall_application() {
+fn install_all_applications() {
+    println!("install all");
+}
+
+fn uninstall_application(app_name: &str) {
     println!("uninstall application");
+}
+
+fn uninstall_all_applications() {
+    println!("Uninstall all");
 }
 
 fn main() {
     let matches = args::parse_args();
     if matches.is_present("install") {
-        install_application();
-    } else if matches.is_present("uninstall") {
-        uninstall_application();
-    } else if matches.is_present("sync") {
-        sync_application();
-    } else if matches.is_present("sync_all") {
-        sync_all_applications();
-    } else if matches.is_present("new"){
-        take_new_application();
-    } else {
-        println!("no operation specified, exiting");
-        exit(0);
+        let app_name = matches.value_of("install").unwrap();
+        install_application(app_name);
     }
+    else if matches.is_present("uninstall") {
+        let app_name = matches.value_of("uninstall").unwrap();
+        uninstall_application(app_name);
+    }
+    else if matches.is_present("sync") {
+        let app_name = matches.value_of("sync").unwrap();
+        sync_application(app_name);
+    }
+    else if matches.is_present("install_all") { install_all_applications(); }
+    else if matches.is_present("uninstall_all") { uninstall_all_applications(); }
+    else if matches.is_present("sync_all") { sync_all_applications(); }
+    else if matches.is_present("new") { take_new_application(); }
 }
