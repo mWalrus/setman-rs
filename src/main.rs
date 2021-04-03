@@ -2,14 +2,13 @@ extern crate clap;
 extern crate colored;
 extern crate toml;
 extern crate serde;
+extern crate home;
 
 mod readline;
 mod fileman;
 mod args;
 
-use std::process::exit;
 use colored::*;
-use serde::Deserialize;
 
 fn take_new_application() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());
@@ -20,11 +19,20 @@ fn take_new_application() {
     println!("App name: {}\nPath: {}\nFiles: {}", app_name, app_config_path, config_files);
 }
 
+fn get_absolute_path(relative_path: &str) -> String {
+    home::home_dir().unwrap().display().to_string() + "/" + relative_path + "/"
+}
+
 fn sync_application(app_name: &str) {
     println!("sync application");
     let mut a = fileman::Apps::new();
     let app = a.find_app_by_name(app_name);
-    println!("{}", app.config_path);
+    let conf_path = get_absolute_path(&app.config_path);
+    let file_names = &app.file_names;
+    for file in file_names {
+        let file_path = "./".to_owned() + &app.name + "/" + file;
+        println!("{}", file_path);
+    }
 }
 
 fn sync_all_applications() {
