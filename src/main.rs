@@ -7,6 +7,7 @@ extern crate home;
 mod readline;
 mod fileman;
 mod args;
+mod logger;
 
 use colored::*;
 
@@ -24,14 +25,15 @@ fn get_absolute_path(relative_path: &str) -> String {
 }
 
 fn sync_application(app_name: &str) {
-    println!("sync application");
-    let mut a = fileman::Apps::new();
-    let app = a.find_app_by_name(app_name);
+    logger::print_job("Syncing application ".to_owned() + app_name);
+    let mut apps = fileman::Apps::new();
+    let app = apps.find_app_by_name(app_name);
     let conf_path = get_absolute_path(&app.config_path);
     let file_names = &app.file_names;
     for file in file_names {
-        let file_path = "./".to_owned() + &app.name + "/" + file;
-        println!("{}", file_path);
+        let local_file_path = "./".to_owned() + app.name.as_str() + "/" + file;
+        logger::print_info("Syncing ~/".to_owned() + &app.config_path + " => " + &local_file_path);
+        // Implement copy method from Apps
     }
 }
 
@@ -41,6 +43,8 @@ fn sync_all_applications() {
 
 fn install_application(app_name: &str) {
     println!("install application");
+    let mut apps = fileman::Apps::new();
+    let app = apps.find_app_by_name(app_name);
 
 }
 
