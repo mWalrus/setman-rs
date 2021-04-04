@@ -32,23 +32,29 @@ fn sync_application(app_name: &str) {
     let apps = &mut Apps::new();
     let app = apps.find_app_by_name(&app_name);
     let conf_path = get_absolute_path(&app.config_path);
-    apps.copy_files(app, &conf_path, &("./".to_string() + &app.name + "/"));
+    let rel_path = "./".to_string() + &app.name + "/";
+    apps.copy_files(&app, &conf_path, &rel_path);
 }
 
 fn sync_all_applications() {
     println!("sync all applications");
-    let apps = &mut Apps::new();
+    let mut apps = Apps::new();
     apps.get_apps();
-    for app in &apps.apps {
+    let app_list = &mut apps.apps;
+    for app in app_list {
         let conf_path = get_absolute_path(&app.config_path);
-        apps.copy_files(&app, &conf_path, &("./".to_string() + &app.name + "/"));
+        let rel_path = "./".to_string() + &app.name + "/";
+        apps.copy_files(app, &conf_path, &rel_path);
     }
 }
 
 fn install_application(app_name: &str) {
     println!("install application");
     let mut apps = fileman::Apps::new();
-    let app = apps.find_app_by_name(app_name);
+    let app = apps.find_app_by_name(&app_name);
+    let conf_path = get_absolute_path(&app.config_path);
+    let rel_path = "./".to_string() + &app.name + "/";
+    apps.copy_files(&app, &conf_path, &rel_path);
 
 }
 

@@ -23,10 +23,11 @@ impl Apps {
         }
     }
 
-    pub fn find_app_by_name(&mut self, app_name: &str) -> &Application {
+    pub fn find_app_by_name(&mut self, app_name: &str) -> Application {
         self.get_apps();
-        let pos: usize = self.apps.iter().position(|i| i.name == app_name).unwrap();
-        self.apps.get(pos).unwrap()
+        let apps = self.apps;
+        let pos: usize = apps.iter().position(|i| i.name == app_name).unwrap();
+        *apps.get(pos).unwrap()
     }
 
     pub fn get_apps(&mut self) {
