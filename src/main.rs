@@ -10,6 +10,9 @@ mod args;
 mod logger;
 
 use colored::*;
+use fileman::{Application, Apps};
+
+//hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
 
 fn take_new_application() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());
@@ -25,20 +28,21 @@ fn get_absolute_path(relative_path: &str) -> String {
 }
 
 fn sync_application(app_name: &str) {
-    logger::print_job("Syncing application ".to_owned() + app_name);
-    let mut apps = fileman::Apps::new();
-    let app = apps.find_app_by_name(app_name);
+    logger::print_job("Syncing application ".to_owned() + &app_name);
+    let apps = &mut Apps::new();
+    let app = apps.find_app_by_name(&app_name);
     let conf_path = get_absolute_path(&app.config_path);
-    let file_names = &app.file_names;
-    for file in file_names {
-        let local_file_path = "./".to_owned() + app.name.as_str() + "/" + file;
-        logger::print_info("Syncing ~/".to_owned() + &app.config_path + " => " + &local_file_path);
-        // Implement copy method from Apps
-    }
+    apps.copy_files(app, &conf_path, &("./".to_string() + &app.name + "/"));
 }
 
 fn sync_all_applications() {
     println!("sync all applications");
+    let apps = &mut Apps::new();
+    apps.get_apps();
+    for app in &apps.apps {
+        let conf_path = get_absolute_path(&app.config_path);
+        apps.copy_files(&app, &conf_path, &("./".to_string() + &app.name + "/"));
+    }
 }
 
 fn install_application(app_name: &str) {

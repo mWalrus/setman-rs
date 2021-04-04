@@ -34,12 +34,14 @@ impl Apps {
         self.apps = toml::from_str::<Apps>(&file_content).unwrap().apps;
     }
 
-    pub fn copy_files(self, source: &str, dest: &str) -> std::io::Result<()> {
-        fs::copy(source, dest)?;
+    pub fn copy_files(&mut self, app: &Application, source: &str, dest: &str) -> std::io::Result<()> {
+        for file in &app.file_names {
+            std::fs::copy(source.to_string() + file, dest)?;
+        }
         Ok(())
     }
 
-    pub fn remove_files(self, path: &str) {
+    pub fn remove_files(&self, path: &str) {
         let files = fs::read_dir(path);
         for file in files {
             println!("{:?}", file);
