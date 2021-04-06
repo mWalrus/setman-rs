@@ -28,6 +28,17 @@ fn get_absolute_path(relative_path: &str) -> String {
     home::home_dir().unwrap().display().to_string() + "/" + relative_path + "/"
 }
 
+fn are_you_sure(action: String, yes_favored: bool) -> bool {
+    let formatted = if yes_favored {"Y/n"} else {"y/N"};
+    let ans = readline::read(&format!("Are you sure you want to {}? ({}): ", &action, formatted));
+    match ans.to_lowercase().as_str() {
+        "y" | "yes" => return true,
+        "n" | "no" => return false,
+        "" => return yes_favored,
+        _ => return false
+    }
+}
+
 // Prints general information about an app
 fn print_app_info(conf_path: &str, file_names: Vec<String>) {
     logger::print_info("Found app config path: ".to_owned() + conf_path);
@@ -82,7 +93,12 @@ fn install_all_applications() {
 }
 
 fn uninstall_application(app_name: &str) {
-    logger::print_job("Uninstall application ".to_owned() + &app_name);
+    let ans = are_you_sure("uninstall ".to_owned() + &app_name, false);
+    if !ans {
+        logger::print_info("Exiting".to_owned());
+        return
+    }
+    logger::print_job("Uninstalling application ".to_owned() + &app_name);
     let mut apps = Apps::new();
     let app = apps.find_app_by_name(&app_name);
     let conf_path = get_absolute_path(&app.config_path);
@@ -90,7 +106,19 @@ fn uninstall_application(app_name: &str) {
 }
 
 fn uninstall_all_applications() {
-    println!("Uninstall all");
+    let ans = are_you_sure("uninstall all applications' settings".to_owned(), false);
+    if !ans {
+        logger::print_info("Exiting".to_owned());
+        return
+    }
+    logger::print_job("Uninstalling all applications".to_owned());
+    let mut apps = Apps::new();
+    apps.read_apps();
+    for app in apps.apps.iter() {
+        let conf_path = get_absolute_path(&app.config_path);
+        print_app_info(&conf_path, app.clone().file_names);
+        fileman::remove_files(&conf_path);
+    }
 }
 
 fn main() {
