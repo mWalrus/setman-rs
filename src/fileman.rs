@@ -5,15 +5,16 @@ extern crate serde;
 mod logger;
 
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write};
+use std::fs;
 use std::path::Path;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde()]
 pub struct Apps {
     pub items: Vec<App>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct App {
     pub name: String,
     pub config_path: String,
@@ -49,7 +50,8 @@ impl Apps {
         if file_content.len() == 1 {
             file_content = "items = []".to_string();
         }
-        self.items = toml::from_str::<Apps>(&file_content).unwrap().items;
+
+        *self = toml::from_str::<Apps>(&file_content).unwrap();
     }
 
     pub fn save_new_app(&mut self, app_info: (String, String, Vec<String>)) {
@@ -57,9 +59,19 @@ impl Apps {
         let app: App = App::new(name, config_path, file_names);
         self.read_apps();
         self.items.push(app);
+        self.write_toml();
+    }
+
+    pub fn remove_app(&mut self, app_name: &str) {
+        self.read_apps();
+        self.items = self.items.clone().into_iter().filter(|a| a.name.ne(app_name)).collect();
+        self.write_toml();
+    }
+
+    fn write_toml(&self) {
         let toml = toml::to_vec(&self).unwrap();
-        let mut file = fs::OpenOptions::new().write(true).open("Applications.toml").unwrap();
-        file.write(&toml).unwrap();
+        println!("{:?}", toml);
+        fs::write("Applications.toml", &toml).unwrap();
     }
 }
 

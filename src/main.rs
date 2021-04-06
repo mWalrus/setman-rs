@@ -29,22 +29,19 @@ fn main() {
         print_app_list();
         exit(0);
     }
-
     if matches.is_present("install") {
         let app_name = matches.value_of("install").unwrap();
         install_application(app_name);
         exit(0);
     }
-
     if matches.is_present("uninstall") {
         let app_name = matches.value_of("uninstall").unwrap();
         uninstall_application(app_name);
         exit(0);
     }
-
     if matches.is_present("sync") {
         let app_name = matches.value_of("sync").unwrap();
-        sync_application(app_name);
+        sync_application(app_name, matches.is_present("skip_push"));
         exit(0);
     }
     if matches.is_present("install_all") {
@@ -56,12 +53,18 @@ fn main() {
         exit(0);
     }
     if matches.is_present("sync_all") {
-        sync_all_applications();
+        sync_all_applications(matches.is_present("skip_push"));
         exit(0);
     }
     if matches.is_present("new") {
         take_new_application();
         exit(0);
+    }
+    if matches.is_present("remove_app") {
+        let app_name = matches.value_of("remove_app").unwrap();
+        logger::print_job("Removing application ".to_owned() + &app_name);
+        let mut apps = Apps::new();
+        apps.remove_app(app_name);
     }
 }
 
@@ -125,19 +128,25 @@ fn app_copy_action(app: &App, from_local: bool) {
     fileman::copy_files(app.clone().file_names, &rel_path, &conf_path).unwrap();
 }
 
-fn sync_application(app_name: &str) {
+fn sync_application(app_name: &str, skip_push: bool) {
     logger::print_job("Syncing application ".to_owned() + &app_name);
     let apps = &mut Apps::new();
     let app = apps.find_app_by_name(app_name);
     app_copy_action(&app, false);
+    if !skip_push {
+        // git push command
+    }
 }
 
-fn sync_all_applications() {
+fn sync_all_applications(skip_push: bool) {
     logger::print_job("Syncing all applications' settings".to_owned());
     let mut apps = Apps::new();
     apps.read_apps();
     for app in apps.items.iter() {
         app_copy_action(app, false);
+    }
+    if !skip_push {
+        // git push command
     }
 }
 
