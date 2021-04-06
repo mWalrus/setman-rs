@@ -42,10 +42,12 @@ impl Apps {
 
 pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> std::io::Result<()> {
     if !Path::new(source).exists() {
-        fs::create_dir(source).unwrap(); // create source dir if nonexistant
+        logger::print_warn("Couldn't find ".to_owned() + &source + ", creating...");
+        fs::create_dir(source)?; // create source dir if nonexistant
     }
     if !Path::new(dest).exists() {
-        fs::create_dir(dest).unwrap(); // create destination dir if nonexistant
+        logger::print_warn("Couldn't find ".to_owned() + &dest + ", creating...");
+        fs::create_dir(dest)?; // create destination dir if nonexistant
     }
     for file in file_names {
         let source_path = source.to_string() + &file;
@@ -57,10 +59,12 @@ pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> std::io:
     Ok(())
 }
 
-pub fn remove_files(path: &str) {
-    let files = fs::read_dir(path);
+pub fn remove_files(conf_path: &str) {
+    let files = fs::read_dir(conf_path).unwrap();
     for file in files {
-        println!("{:?}", file);
+        let file_path = file.unwrap().path();
+        logger::print_info("Removing file ".to_owned() + &file_path.display().to_string());
+        fs::remove_file(&file_path).unwrap();
     }
 }
 

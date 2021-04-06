@@ -10,7 +10,7 @@ mod args;
 mod logger;
 
 use colored::*;
-use fileman::{Apps};
+use fileman::Apps;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
 
@@ -48,11 +48,10 @@ fn sync_application(app_name: &str) {
 }
 
 fn sync_all_applications() {
-    logger::print_job("Syncing all applications".to_owned());
+    logger::print_job("Syncing all applications' settings".to_owned());
     let mut apps = Apps::new();
     apps.read_apps();
-    let app_list = apps.apps;
-    for app in app_list.iter() {
+    for app in apps.apps.iter() {
         let conf_path = get_absolute_path(&app.config_path);
         let rel_path = "./".to_string() + &app.name + "/";
         print_app_info(&conf_path, app.clone().file_names);
@@ -71,11 +70,23 @@ fn install_application(app_name: &str) {
 }
 
 fn install_all_applications() {
-    println!("install all");
+    logger::print_job("Installing all applications' settings".to_owned());
+    let mut apps = Apps::new();
+    apps.read_apps();
+    for app in apps.apps.iter() {
+        let conf_path = get_absolute_path(&app.config_path);
+        let rel_path = "./".to_owned() + &app.name + "/";
+        print_app_info(&conf_path, app.clone().file_names);
+        fileman::copy_files(app.clone().file_names, &rel_path, &conf_path).unwrap();
+    }
 }
 
 fn uninstall_application(app_name: &str) {
-    println!("uninstall application");
+    logger::print_job("Uninstall application ".to_owned() + &app_name);
+    let mut apps = Apps::new();
+    let app = apps.find_app_by_name(&app_name);
+    let conf_path = get_absolute_path(&app.config_path);
+    fileman::remove_files(&conf_path);
 }
 
 fn uninstall_all_applications() {

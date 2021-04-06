@@ -9,3 +9,7 @@ pub fn print_job(message: String) {
 pub fn print_info(message: String) {
     println!("{} {}", "[*]".blue().bold(), message);
 }
+
+pub fn print_warn(message: String) {
+    println!("{} {}", "[!]".red().bold(), message);
+}
