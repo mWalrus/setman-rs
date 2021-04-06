@@ -15,13 +15,64 @@ use std::process::exit;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
 
+fn main() {
+    println!("{}\n\n{}\n", "      ::::::::  :::::::::: ::::::::::: :::   :::       :::     ::::    :::
+    :+:    :+: :+:            :+:    :+:+: :+:+:    :+: :+:   :+:+:   :+:
+   +:+        +:+            +:+   +:+ +:+:+ +:+  +:+   +:+  :+:+:+  +:+
+  +#++:++#++ +#++:++#       +#+   +#+  +:+  +#+ +#++:++#++: +#+ +:+ +#+
+        +#+ +#+            +#+   +#+       +#+ +#+     +#+ +#+  +#+#+#
+#+#    #+# #+#            #+#   #+#       #+# #+#     #+# #+#   #+#+#
+########  ##########     ###   ###       ### ###     ### ###    ####       ".bold().blue(), "Application settings manager".bright_cyan().bold());
+    let matches = args::parse_args();
+
+    if matches.is_present("list") {
+        print_app_list();
+        exit(0);
+    }
+
+    if matches.is_present("install") {
+        let app_name = matches.value_of("install").unwrap();
+        install_application(app_name);
+        exit(0);
+    }
+
+    if matches.is_present("uninstall") {
+        let app_name = matches.value_of("uninstall").unwrap();
+        uninstall_application(app_name);
+        exit(0);
+    }
+
+    if matches.is_present("sync") {
+        let app_name = matches.value_of("sync").unwrap();
+        sync_application(app_name);
+        exit(0);
+    }
+    if matches.is_present("install_all") {
+        install_all_applications();
+        exit(0);
+    }
+    if matches.is_present("uninstall_all") {
+        uninstall_all_applications();
+        exit(0);
+    }
+    if matches.is_present("sync_all") {
+        sync_all_applications();
+        exit(0);
+    }
+    if matches.is_present("new") {
+        take_new_application();
+        exit(0);
+    }
+}
+
 fn take_new_application() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());
     let app_name = readline::read("Enter Application name: ");
     let app_config_path = readline::read("Config path (relative to home): ");
     let config_files = readline::read("File names to save (space separated): ");
 
-    let files_names = config_files.split_whitespace().map(|f| f.to_string()).collect();
+    let files_names = config_files.split_whitespace()
+        .map(|f| f.to_string()).collect();
     let mut apps = Apps::new();
     apps.save_new_app((app_name, app_config_path, files_names));
 }
@@ -32,7 +83,7 @@ fn get_absolute_path(relative_path: &str) -> String {
 }
 
 fn print_app_list() {
-    logger::print_info("Found applications".to_owned());
+    logger::print_info("Found applications:".to_owned());
     let mut apps = Apps::new();
     apps.read_apps();
     for app in apps.items.iter() {
@@ -135,28 +186,4 @@ fn uninstall_all_applications() {
     }
 }
 
-fn main() {
-    let matches = args::parse_args();
 
-    if matches.is_present("list") {
-        print_app_list();
-        exit(0);
-    }
-
-    if matches.is_present("install") {
-        let app_name = matches.value_of("install").unwrap();
-        install_application(app_name);
-    }
-    else if matches.is_present("uninstall") {
-        let app_name = matches.value_of("uninstall").unwrap();
-        uninstall_application(app_name);
-    }
-    else if matches.is_present("sync") {
-        let app_name = matches.value_of("sync").unwrap();
-        sync_application(app_name);
-    }
-    else if matches.is_present("install_all") { install_all_applications(); }
-    else if matches.is_present("uninstall_all") { uninstall_all_applications(); }
-    else if matches.is_present("sync_all") { sync_all_applications(); }
-    else if matches.is_present("new") { take_new_application(); }
-}

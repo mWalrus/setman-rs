@@ -24,11 +24,6 @@ config_path = "wiytd"
 file_names = ["artywid"]
 
 [[items]]
-name = ""
-config_path = ""
-file_names = []
-
-[[items]]
 name = "bruh"
 config_path = "moment/times/two"
 file_names = ["kekl.txt", "cringe.com"]

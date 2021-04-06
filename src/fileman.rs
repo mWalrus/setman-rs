@@ -88,7 +88,7 @@ pub fn remove_files(conf_path: &str) {
     let files = fs::read_dir(conf_path).unwrap();
     for file in files {
         let file_path = file.unwrap().path();
-        logger::print_info("Removing file ".to_owned() + &file_path.display().to_string());
+        logger::print_warn("Removing file ".to_owned() + &file_path.display().to_string());
         fs::remove_file(&file_path).unwrap();
     }
 }
