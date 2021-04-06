@@ -1,7 +1,34 @@
-apps = [
-  {name = "neovim", config_path = ".config/nvim", file_names = ["coc-settings.json", "init.vim"]},
-  {name = "neovim", config_path = ".config/nvim", file_names = ["coc-settings.json", "init.vim"]},
-  {name = "neovim", config_path = ".config/nvim", file_names = ["coc-settings.json", "init.vim"]},
-  {name = "neovim", config_path = ".config/nvim", file_names = ["coc-settings.json", "init.vim"]},
-]
+[[items]]
+name = "test"
+config_path = "test"
+file_names = ["ttes"]
 
+[[items]]
+name = "test2"
+config_path = "test2"
+file_names = ["test2"]
+
+[[items]]
+name = "owudy"
+config_path = "wiagd"
+file_names = ["aywtdc"]
+
+[[items]]
+name = "oauywsd"
+config_path = "owuyd"
+file_names = ["uyoasvfcd"]
+
+[[items]]
+name = "iatyus"
+config_path = "wiytd"
+file_names = ["artywid"]
+
+[[items]]
+name = ""
+config_path = ""
+file_names = []
+
+[[items]]
+name = "bruh"
+config_path = "moment/times/two"
+file_names = ["kekl.txt", "cringe.com"]

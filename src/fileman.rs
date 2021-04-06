@@ -4,39 +4,62 @@ extern crate serde;
 #[path = "./logger.rs"]
 mod logger;
 
-use serde::Deserialize;
-use std::fs;
+use serde::{Deserialize, Serialize};
+use std::{fs, io::Write};
 use std::path::Path;
 
-#[derive(Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Apps {
-    pub apps: Vec<App>,
+    pub items: Vec<App>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct App {
     pub name: String,
     pub config_path: String,
     pub file_names: Vec<String>,
 }
 
+impl App {
+    pub fn new(name: String, config_path: String, file_names: Vec<String>) -> App {
+        App {
+            name,
+            config_path,
+            file_names
+        }
+    }
+}
+
 impl Apps {
     pub fn new() -> Apps {
         Apps {
-            apps: Vec::new()
+            items: Vec::new()
         }
     }
 
     pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> App {
         self.read_apps();
-        let pos: usize = self.apps.iter().position(|i| i.name == app_name).unwrap();
-        let app = self.apps.get(pos).unwrap();
+        let pos: usize = self.items.iter().position(|i| i.name == app_name).unwrap();
+        let app = self.items.get(pos).unwrap();
         app.clone()
     }
 
     pub fn read_apps(&mut self) {
-        let file_content: String = fs::read_to_string("Applications.toml").unwrap();
-        self.apps = toml::from_str::<Apps>(&file_content).unwrap().apps;
+        let mut file_content: String = fs::read_to_string("Applications.toml").unwrap();
+        if file_content.len() == 1 {
+            file_content = "items = []".to_string();
+        }
+        self.items = toml::from_str::<Apps>(&file_content).unwrap().items;
+    }
+
+    pub fn save_new_app(&mut self, app_info: (String, String, Vec<String>)) {
+        let (name, config_path, file_names) = app_info;
+        let app: App = App::new(name, config_path, file_names);
+        self.read_apps();
+        self.items.push(app);
+        let toml = toml::to_vec(&self).unwrap();
+        let mut file = fs::OpenOptions::new().write(true).open("Applications.toml").unwrap();
+        file.write(&toml).unwrap();
     }
 }
 

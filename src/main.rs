@@ -10,7 +10,8 @@ mod args;
 mod logger;
 
 use colored::*;
-use fileman::Apps;
+use fileman::{Apps, App};
+use std::process::exit;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
 
@@ -21,11 +22,27 @@ fn take_new_application() {
     let config_files = readline::read("File names to save (space separated): ");
 
     println!("App name: {}\nPath: {}\nFiles: {}", app_name, app_config_path, config_files);
+
+    let mut files_split: Vec<String> = Vec::new();
+    for file_name in config_files.split_whitespace() {
+        files_split.push(file_name.to_string());
+    }
+    let mut apps = Apps::new();
+    apps.save_new_app((app_name, app_config_path, files_split));
 }
 
 // Gets the absolute path to a config directory
 fn get_absolute_path(relative_path: &str) -> String {
     home::home_dir().unwrap().display().to_string() + "/" + relative_path + "/"
+}
+
+fn print_app_list() {
+    logger::print_info("Found applications".to_owned());
+    let mut apps = Apps::new();
+    apps.read_apps();
+    for app in apps.items.iter() {
+        println!("    - {}", app.name);
+    }
 }
 
 fn are_you_sure(action: String, yes_favored: bool) -> bool {
@@ -48,47 +65,49 @@ fn print_app_info(conf_path: &str, file_names: Vec<String>) {
     }
 }
 
+fn get_paths(app: &App) -> (String, String) {
+    return (get_absolute_path(&app.config_path), "./".to_string() + &app.name + "/")
+}
+
+fn app_copy_action(app: &App, from_local: bool) {
+    let (conf_path, rel_path) = get_paths(app);
+    print_app_info(&conf_path, app.clone().file_names);
+    if from_local {
+        fileman::copy_files(app.clone().file_names, &conf_path, &rel_path).unwrap();
+        return
+    }
+    fileman::copy_files(app.clone().file_names, &rel_path, &conf_path).unwrap();
+}
+
 fn sync_application(app_name: &str) {
     logger::print_job("Syncing application ".to_owned() + &app_name);
     let apps = &mut Apps::new();
-    let app = apps.find_app_by_name(&app_name);
-    let conf_path = get_absolute_path(&app.config_path);
-    let rel_path = "./".to_string() + &app.name + "/";
-    print_app_info(&conf_path, app.clone().file_names);
-    fileman::copy_files(app.file_names, &conf_path, &rel_path).unwrap();
+    let app = apps.find_app_by_name(app_name);
+    app_copy_action(&app, false);
 }
 
 fn sync_all_applications() {
     logger::print_job("Syncing all applications' settings".to_owned());
     let mut apps = Apps::new();
     apps.read_apps();
-    for app in apps.apps.iter() {
-        let conf_path = get_absolute_path(&app.config_path);
-        let rel_path = "./".to_string() + &app.name + "/";
-        print_app_info(&conf_path, app.clone().file_names);
-        fileman::copy_files(app.clone().file_names, &conf_path, &rel_path).unwrap();
+    for app in apps.items.iter() {
+        app_copy_action(app, false);
     }
 }
 
 fn install_application(app_name: &str) {
     logger::print_job("Installing application".to_owned() + &app_name);
-    let mut apps = fileman::Apps::new();
-    let app = apps.find_app_by_name(&app_name);
-    let conf_path = get_absolute_path(&app.config_path);
-    let rel_path = "./".to_string() + &app.name + "/";
-    fileman::copy_files(app.file_names, &conf_path, &rel_path).unwrap();
-
+    let apps = &mut Apps::new();
+    let app = apps.find_app_by_name(app_name);
+    app_copy_action(&app, true);
 }
 
 fn install_all_applications() {
     logger::print_job("Installing all applications' settings".to_owned());
     let mut apps = Apps::new();
     apps.read_apps();
-    for app in apps.apps.iter() {
-        let conf_path = get_absolute_path(&app.config_path);
-        let rel_path = "./".to_owned() + &app.name + "/";
-        print_app_info(&conf_path, app.clone().file_names);
-        fileman::copy_files(app.clone().file_names, &rel_path, &conf_path).unwrap();
+    for app in apps.items.iter() {
+        app_copy_action(app, true);
     }
 }
 
@@ -114,7 +133,7 @@ fn uninstall_all_applications() {
     logger::print_job("Uninstalling all applications".to_owned());
     let mut apps = Apps::new();
     apps.read_apps();
-    for app in apps.apps.iter() {
+    for app in apps.items.iter() {
         let conf_path = get_absolute_path(&app.config_path);
         print_app_info(&conf_path, app.clone().file_names);
         fileman::remove_files(&conf_path);
@@ -123,6 +142,12 @@ fn uninstall_all_applications() {
 
 fn main() {
     let matches = args::parse_args();
+
+    if matches.is_present("list") {
+        print_app_list();
+        exit(0);
+    }
+
     if matches.is_present("install") {
         let app_name = matches.value_of("install").unwrap();
         install_application(app_name);
