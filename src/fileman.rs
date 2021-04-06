@@ -40,15 +40,17 @@ impl Apps {
     }
 }
 
+fn dir_exists(path: &str) {
+    if !Path::new(path).exists() {
+        logger::print_warn("Couldn't find ".to_owned() + path);
+        logger::print_info("Creating ".to_owned() + path);
+        fs::create_dir(path).unwrap(); // create dir if nonexistant
+    };
+}
+
 pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> std::io::Result<()> {
-    if !Path::new(source).exists() {
-        logger::print_warn("Couldn't find ".to_owned() + &source + ", creating...");
-        fs::create_dir(source)?; // create source dir if nonexistant
-    }
-    if !Path::new(dest).exists() {
-        logger::print_warn("Couldn't find ".to_owned() + &dest + ", creating...");
-        fs::create_dir(dest)?; // create destination dir if nonexistant
-    }
+    dir_exists(source);
+    dir_exists(dest);
     for file in file_names {
         let source_path = source.to_string() + &file;
         let dest_path = dest.to_string() + &file;
