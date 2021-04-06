@@ -21,14 +21,9 @@ fn take_new_application() {
     let app_config_path = readline::read("Config path (relative to home): ");
     let config_files = readline::read("File names to save (space separated): ");
 
-    println!("App name: {}\nPath: {}\nFiles: {}", app_name, app_config_path, config_files);
-
-    let mut files_split: Vec<String> = Vec::new();
-    for file_name in config_files.split_whitespace() {
-        files_split.push(file_name.to_string());
-    }
+    let files_names = config_files.split_whitespace().map(|f| f.to_string()).collect();
     let mut apps = Apps::new();
-    apps.save_new_app((app_name, app_config_path, files_split));
+    apps.save_new_app((app_name, app_config_path, files_names));
 }
 
 // Gets the absolute path to a config directory
