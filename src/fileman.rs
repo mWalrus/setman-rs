@@ -1,16 +1,14 @@
 extern crate toml;
 extern crate serde;
-extern crate serde_json;
 
 #[path = "./logger.rs"]
 mod logger;
 
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::Path;
+use std::fs;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct Apps {
     pub items: Vec<App>,
 }
@@ -34,43 +32,37 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
-        Apps {
-            items: Vec::new()
+        let mut file_content: String = fs::read_to_string("setman.toml").unwrap();
+        if file_content.len() < 2 {
+            file_content = "items = []".to_string();
         }
+        let parsed: Apps = toml::from_str::<Apps>(&file_content).unwrap();
+        //Apps {
+            //items: parsed.items,
+        //}
+        parsed
     }
 
     pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> App {
-        self.read_apps();
         let pos: usize = self.items.iter().position(|i| i.name == app_name).unwrap();
         let app = self.items.get(pos).unwrap();
         app.clone()
     }
 
-    pub fn read_apps(&mut self) {
-        let mut file_content: String = fs::read_to_string("setman.toml").unwrap();
-        if file_content.len() == 1 {
-            file_content = "items = []".to_string();
-        }
-
-        *self = toml::from_str::<Apps>(&file_content).unwrap();
-    }
-
     pub fn save_new_app(&mut self, app_info: (String, String, Vec<String>)) {
         let (name, config_path, file_names) = app_info;
         let app: App = App::new(name, config_path, file_names);
-        self.read_apps();
         self.items.push(app);
         self.write_toml();
     }
 
     pub fn remove_app(&mut self, app_name: &str) {
-        self.read_apps();
         self.items = self.items.clone().into_iter().filter(|a| a.name.ne(app_name)).collect();
         self.write_toml();
     }
 
     fn write_toml(&self) {
-        let toml = serde_json::to_string_pretty(&self).unwrap();
+        let toml = toml::to_string(&self).unwrap();
         fs::write("setman.toml", &toml).unwrap();
     }
 }

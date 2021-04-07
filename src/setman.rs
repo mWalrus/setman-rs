@@ -33,8 +33,7 @@ fn get_absolute_path(relative_path: &str) -> String {
 
 pub fn print_app_list() {
     logger::print_info("Found applications:".to_owned());
-    let mut apps = Apps::new();
-    apps.read_apps();
+    let apps = Apps::new();
     for app in apps.items.iter() {
         println!("    - {}", app.name);
     }
@@ -86,8 +85,7 @@ pub fn sync_application(app_name: &str, skip_push: bool) {
 
 pub fn sync_all_applications(skip_push: bool) {
     logger::print_job("Syncing all applications' settings".to_owned());
-    let mut apps = Apps::new();
-    apps.read_apps();
+    let apps = Apps::new();
     for app in apps.items.iter() {
         app_copy_action(app, false);
     }
@@ -105,8 +103,7 @@ pub fn install_application(app_name: &str) {
 
 pub fn install_all_applications() {
     logger::print_job("Installing all applications' settings".to_owned());
-    let mut apps = Apps::new();
-    apps.read_apps();
+    let apps = Apps::new();
     for app in apps.items.iter() {
         app_copy_action(app, true);
     }
@@ -132,10 +129,9 @@ pub fn uninstall_application(app_name: &str) {
 }
 
 pub fn uninstall_all_applications() {
-    let mut apps = uninstall_pre(
+    let apps = uninstall_pre(
         "uninstall all applications' settings".to_owned(),
         "Uninstalling all applications".to_owned());
-    apps.read_apps();
     for app in apps.items.iter() {
         let conf_path = get_absolute_path(&app.config_path);
         print_app_info(&conf_path, app.clone().file_names);
