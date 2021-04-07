@@ -1,7 +1,7 @@
 extern crate toml;
 extern crate serde;
 
-#[path = "./logger.rs"]
+#[path = "logger.rs"]
 mod logger;
 
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,9 @@ pub struct App {
     pub file_names: Vec<String>,
 }
 
+
+static APPS_FILE: &str = "apps.toml";
+
 impl App {
     pub fn new(name: String, config_path: String, file_names: Vec<String>) -> App {
         App {
@@ -32,20 +35,21 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
-        let mut file_content: String = fs::read_to_string("setman.toml").unwrap();
+        let mut file_content: String = fs::read_to_string(APPS_FILE).unwrap();
         if file_content.len() < 2 {
             file_content = "items = []".to_string();
         }
         let parsed: Apps = toml::from_str::<Apps>(&file_content).unwrap();
-        //Apps {
-            //items: parsed.items,
-        //}
         parsed
     }
 
     pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> App {
-        let pos: usize = self.items.iter().position(|i| i.name == app_name).unwrap();
-        let app = self.items.get(pos).unwrap();
+        let pos: Option<usize> = self.items.iter().position(|i| i.name == app_name);
+        if pos == None {
+            logger::print_warn("Application with name '".to_owned() + &app_name + "' could not be found");
+            std::process::exit(0);
+        }
+        let app = self.items.get(pos.unwrap()).unwrap();
         app.clone()
     }
 
@@ -63,7 +67,7 @@ impl Apps {
 
     fn write_toml(&self) {
         let toml = toml::to_string(&self).unwrap();
-        fs::write("setman.toml", &toml).unwrap();
+        fs::write(APPS_FILE, &toml).unwrap();
     }
 }
 
@@ -96,6 +100,3 @@ pub fn remove_files(conf_path: &str) {
         fs::remove_file(&file_path).unwrap();
     }
 }
-
-
-

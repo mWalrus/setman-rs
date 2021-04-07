@@ -58,6 +58,10 @@ fn main() {
         let app_name = matches.value_of("remove_app").unwrap();
         setman::remove_application(app_name);
     }
+    if matches.is_present("modify") {
+        let app_name = matches.value_of("modify").unwrap();
+        setman::modify_application(app_name);
+    }
 }
 
 

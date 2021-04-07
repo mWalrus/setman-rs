@@ -4,12 +4,14 @@ extern crate serde;
 extern crate home;
 
 
-#[path = "./logger.rs"]
+#[path = "logger.rs"]
 mod logger;
-#[path = "./fileman.rs"]
+#[path = "fileman.rs"]
 mod fileman;
-#[path = "./readline.rs"]
+#[path = "readline.rs"]
 mod readline;
+#[path = "config.rs"]
+mod config;
 
 use fileman::{Apps, App};
 use colored::*;
@@ -143,4 +145,16 @@ pub fn remove_application(app_name: &str) {
     logger::print_warn("Removing ".to_owned() + &app_name);
     let mut apps = Apps::new();
     apps.remove_app(app_name);
+}
+
+pub fn modify_application(app_name: &str) {
+    let mut apps = Apps::new();
+    let mut app = apps.find_app_by_name(&app_name);
+    logger::print_info("Modify ".to_owned() + &app_name);
+    println!("    {} Name\n    {} Config path\n    {} File names", "1.".bold(), "2.".bold(), "3.".bold());
+    let ans = readline::read("Select number of field you want to edit: ");
+    if ans.eq("") {
+        logger::print_warn("No option specified, exiting.".to_owned());
+        std::process::exit(0);
+    }
 }
