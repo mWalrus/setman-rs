@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "name": "chatterino",
+      "config_path": ".local/share/chatterino/Settings",
+      "file_names": [
+        "commands.json",
+        "settings.json",
+        "window-layout.json"
+      ]
+    },
+    {
+      "name": "test",
+      "config_path": "test",
+      "file_names": [
+        "test"
+      ]
+    },
+    {
+      "name": "test2",
+      "config_path": "test2",
+      "file_names": [
+        "test2"
+      ]
+    }
+  ]
+}

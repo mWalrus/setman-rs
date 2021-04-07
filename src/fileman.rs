@@ -1,5 +1,6 @@
 extern crate toml;
 extern crate serde;
+extern crate serde_json;
 
 #[path = "./logger.rs"]
 mod logger;
@@ -9,7 +10,7 @@ use std::fs;
 use std::path::Path;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde()]
+#[serde(rename_all = "camelCase")]
 pub struct Apps {
     pub items: Vec<App>,
 }
@@ -46,7 +47,7 @@ impl Apps {
     }
 
     pub fn read_apps(&mut self) {
-        let mut file_content: String = fs::read_to_string("Applications.toml").unwrap();
+        let mut file_content: String = fs::read_to_string("setman.toml").unwrap();
         if file_content.len() == 1 {
             file_content = "items = []".to_string();
         }
@@ -69,9 +70,8 @@ impl Apps {
     }
 
     fn write_toml(&self) {
-        let toml = toml::to_vec(&self).unwrap();
-        println!("{:?}", toml);
-        fs::write("Applications.toml", &toml).unwrap();
+        let toml = serde_json::to_string_pretty(&self).unwrap();
+        fs::write("setman.toml", &toml).unwrap();
     }
 }
 

@@ -1,4 +1,0 @@
-[[items]]
-name = "chatterino"
-config_path = ".local/share/chatterino/Settings"
-file_names = ["commands.json", "settings.json", "window-layout.json"]
