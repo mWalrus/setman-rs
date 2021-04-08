@@ -53,9 +53,7 @@ impl Apps {
         app.clone()
     }
 
-    pub fn save_new_app(&mut self, app_info: (String, String, Vec<String>)) {
-        let (name, config_path, file_names) = app_info;
-        let app: App = App::new(name, config_path, file_names);
+    pub fn save_new_app(&mut self, app: App) {
         self.items.push(app);
         self.write_toml();
     }

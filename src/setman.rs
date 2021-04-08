@@ -25,7 +25,7 @@ pub fn take_new_application() {
     let files_names = config_files.split_whitespace()
         .map(|f| f.to_string()).collect();
     let mut apps = Apps::new();
-    apps.save_new_app((app_name, app_config_path, files_names));
+    apps.save_new_app(App::new(app_name, app_config_path, files_names));
 }
 
 // Gets the absolute path to a config directory
@@ -152,9 +152,31 @@ pub fn modify_application(app_name: &str) {
     let mut app = apps.find_app_by_name(&app_name);
     logger::print_info("Modify ".to_owned() + &app_name);
     println!("    {} Name\n    {} Config path\n    {} File names", "1.".bold(), "2.".bold(), "3.".bold());
-    let ans = readline::read("Select number of field you want to edit: ");
-    if ans.eq("") {
-        logger::print_warn("No option specified, exiting.".to_owned());
-        std::process::exit(0);
+    let ans: i32 = readline::read("Select number of field you want to edit: ").parse::<i32>().unwrap();
+    match ans {
+        1 => app.name = readline::read("Enter a new name: "),
+        2 => app.config_path = readline::read("Enter a new config path: "),
+        3 => {
+            let mut file_names = app.file_names.clone();
+            for (i, name) in file_names.iter().enumerate() {
+                println!("    {} {}", ((i+1).to_string() + ".").bold(), name);
+            }
+            let file_index: usize = readline::read("Select file name you want to edit: ").parse::<usize>().unwrap();
+            if !(0..file_names.len()).contains(&(file_index - 1)) {
+
+            }
+            let new_file_name = readline::read("Enter a new file name: ");
+            file_names.remove(file_index - 1);
+            file_names.insert(file_index - 1, new_file_name);
+            app.file_names = file_names;
+
+        },
+        _ => {
+            logger::print_warn("Invalid option, exiting.".to_owned());
+            std::process::exit(0);
+        }
     }
+    println!("{:#?}", app);
+    apps.remove_app(app_name);
+    apps.save_new_app(app);
 }

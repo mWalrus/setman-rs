@@ -1,5 +1,5 @@
 extern crate home;
 
-use std::process::Command;
+//use std::process::Command;
 
-static CONFIG_DIRECTORY: &str = "/.config/setman/";
+static _CONFIG_DIRECTORY: &str = "/.config/setman/";
