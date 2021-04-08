@@ -147,6 +147,7 @@ pub fn remove_application(app_name: &str) {
     apps.remove_app(app_name);
 }
 
+// FIXME: handle Err on options that cant be parsed into number
 pub fn modify_application(app_name: &str) {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name);
