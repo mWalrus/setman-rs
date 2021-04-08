@@ -153,7 +153,7 @@ pub fn modify_application(app_name: &str) {
     let mut app = apps.find_app_by_name(&app_name);
     logger::print_info("Modify ".to_owned() + &app_name);
     println!("    {} Name\n    {} Config path\n    {} File names", "1.".bold(), "2.".bold(), "3.".bold());
-    let ans: i32 = readline::read("Select number of field you want to edit: ").parse::<i32>().unwrap();
+    let ans: i32 = readline::read("Select field you want to edit: ").parse::<i32>().unwrap();
     match ans {
         1 => app.name = readline::read("Enter a new name: "),
         2 => app.config_path = readline::read("Enter a new config path: "),
@@ -177,7 +177,6 @@ pub fn modify_application(app_name: &str) {
             std::process::exit(0);
         }
     }
-    println!("{:#?}", app);
     apps.remove_app(app_name);
     apps.save_new_app(app);
 }
