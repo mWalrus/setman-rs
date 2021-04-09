@@ -177,6 +177,9 @@ pub fn modify_application(app_name: &str) {
             std::process::exit(0);
         }
     }
-    apps.remove_app(app_name);
-    apps.save_new_app(app);
+    // make sure user wants to modify the application
+    if are_you_sure("modify ".to_owned() + &app_name, true) {
+        apps.remove_app(app_name);
+        apps.save_new_app(app);
+    }
 }
