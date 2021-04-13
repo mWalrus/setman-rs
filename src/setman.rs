@@ -147,13 +147,18 @@ pub fn remove_application(app_name: &str) {
     apps.remove_app(app_name);
 }
 
+fn exit_on_invalid() {
+    logger::print_warn("Invalid option, exiting.".to_owned());
+    std::process::exit(0);
+}
+
 // FIXME: handle Err on options that cant be parsed into number
 pub fn modify_application(app_name: &str) {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name);
     logger::print_info("Modify ".to_owned() + &app_name);
     println!("    {} Name\n    {} Config path\n    {} File names", "1.".bold(), "2.".bold(), "3.".bold());
-    let ans: i32 = readline::read("Select field you want to edit: ").parse::<i32>().unwrap();
+    let ans: i32 = readline::read("Select field you want to edit: ").parse().unwrap_or(-1);
     match ans {
         1 => app.name = readline::read("Enter a new name: "),
         2 => app.config_path = readline::read("Enter a new config path: "),
@@ -162,20 +167,17 @@ pub fn modify_application(app_name: &str) {
             for (i, name) in file_names.iter().enumerate() {
                 println!("    {} {}", ((i+1).to_string() + ".").bold(), name);
             }
-            let file_index: usize = readline::read("Select file name you want to edit: ").parse::<usize>().unwrap();
-            if !(0..file_names.len()).contains(&(file_index - 1)) {
+            let file_index: usize = readline::read("Select file name you want to edit: ").parse().unwrap_or(usize::MIN);
+            // handle invalid option
+            if file_index.eq(&usize::MIN) || !(0..file_names.len()).contains(&(file_index - 1)) {exit_on_invalid()};
 
-            }
             let new_file_name = readline::read("Enter a new file name: ");
             file_names.remove(file_index - 1);
             file_names.insert(file_index - 1, new_file_name);
             app.file_names = file_names;
 
         },
-        _ => {
-            logger::print_warn("Invalid option, exiting.".to_owned());
-            std::process::exit(0);
-        }
+        _ => exit_on_invalid(),
     }
     // make sure user wants to modify the application
     if are_you_sure("modify ".to_owned() + &app_name, true) {
