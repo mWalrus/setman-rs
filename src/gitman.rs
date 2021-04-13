@@ -18,3 +18,14 @@
 // be application specific with the option to sync all
 
 // i will need to think more about the above thoughts
+
+// The clone sync flag could have application specific syncing so when the repo is cloned
+// setman will check if an application was specified and only copy the cloned files for that application
+// to the local collection
+
+// Same thing could be done for the push command, an option to sync all will be avaliable but application specific
+// push syncs is also possible, application settings will be copied to local and pushed.
+
+// The option to only sync a single application both ways is good if you have unfinished versions of a config you
+// are not sure if you want to use or discard on another system or user.
+
