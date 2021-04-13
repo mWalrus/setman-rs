@@ -29,3 +29,9 @@
 // The option to only sync a single application both ways is good if you have unfinished versions of a config you
 // are not sure if you want to use or discard on another system or user.
 
+// expand this to be able to use ssh for clone and push
+// (repository struct does not support this but RepoBuilder does)
+
+extern crate git2;
+
+use git2::Repository;
