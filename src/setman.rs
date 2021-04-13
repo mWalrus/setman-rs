@@ -152,7 +152,6 @@ fn exit_on_invalid() {
     std::process::exit(0);
 }
 
-// FIXME: handle Err on options that cant be parsed into number
 pub fn modify_application(app_name: &str) {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name);
