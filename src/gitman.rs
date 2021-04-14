@@ -56,7 +56,6 @@ static GIT_FILE: &str = "git.toml";
 #[derive(Deserialize)]
 pub struct GitRepo {
     upstream_url: String,
-    git_dir_name: String,
     git_dir_path: String,
 }
 
@@ -80,7 +79,6 @@ impl GitRepo {
         let git_dir_path = "/tmp/".to_string() + &git_dir_name;
         GitRepo {
             upstream_url,
-            git_dir_name,
             git_dir_path,
         }
     }
