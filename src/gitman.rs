@@ -73,7 +73,7 @@ impl GitRepo {
                 exit(0);
             }
         };
-        let repo_name = Uuid::new_v4().to_string();
+        let repo_name = "setman-tmp".to_string() + &Uuid::new_v4().to_string();
         let repo_path = "/tmp/".to_string() + &repo_name;
         GitRepo {
             upstream_url,
