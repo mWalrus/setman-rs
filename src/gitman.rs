@@ -35,17 +35,22 @@
 extern crate git2;
 extern crate uuid;
 extern crate toml;
+extern crate serde;
 
 #[path = "fileman.rs"]
 mod fileman;
+#[path = "readline.rs"]
+mod readline;
 
 use git2::Repository;
 use uuid::Uuid;
-use std::fs;
+use std::{borrow::Borrow, fs};
 use std::process::exit;
+use serde::{Deserialize};
 
 static GIT_FILE: &str = "git.toml";
 
+#[derive(Deserialize)]
 pub struct GitRepo {
     upstream_url: String,
     git_dir_name: String,
@@ -53,13 +58,18 @@ pub struct GitRepo {
 
 impl GitRepo {
     pub fn new() -> GitRepo {
+        let file_content = fs::read_to_string(GIT_FILE).unwrap();
+        let parsed: GitRepo = toml::from_str(&file_content).unwrap();
         GitRepo {
-            upstream_url: String::new(),
+            upstream_url: parsed.upstream_url,
             git_dir_name: Uuid::new_v4().to_string(),
         }
     }
+    pub fn push_settings(self) {
+        let sudo_pass = readline::read("Enter sudo password: ");
+        let repo = Repository::clone(
+            self.upstream_url.borrow(),
+            &("/tmp".to_string() + self.git_dir_name.borrow()));
 
-    fn read_upstream(self) {
-        let file_content = fs::read_to_string(GIT_FILE).unwrap();
     }
 }
