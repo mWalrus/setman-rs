@@ -55,8 +55,8 @@ fn main() {
             },
         ("new", Some(_sub_m)) => setman::take_new_application(),
         ("sync", Some(sub_m)) => {
-            let direction = sub_m.value_of("direction").unwrap();
-            setman::sync_settings(direction);
+            let direction = sub_m.value_of("direction").unwrap().to_lowercase();
+            setman::sync_settings(&direction);
         },
         _ => exit(0),
     }

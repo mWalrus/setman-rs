@@ -35,6 +35,7 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
+        // Replace this with a match statement handling fileNotFound and empty string errors
         let mut file_content: String = fs::read_to_string(APPS_FILE).unwrap();
         if file_content.len() < 2 {
             file_content = "items = []".to_string();

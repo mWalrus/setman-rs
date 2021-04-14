@@ -15,13 +15,32 @@ mod config;
 #[path = "gitman.rs"]
 mod gitman;
 
+use std::process::exit;
+
 use fileman::{Apps, App};
 use gitman::GitRepo;
 use colored::*;
 
+static _LOCAL_CONF_PATH: &str = ".config/setman/";
+static LOCAL_SETTINGS_PATH: &str = ".config/setman/settings/";
+
 pub fn sync_settings(direction: &str) {
-    let gitman = GitRepo::new();
-    gitman.get_settings();
+    let mut gitman = GitRepo::new();
+    gitman.clone_repo();
+    let repo_path = gitman.get_repo_path();
+    if direction.eq("down") {
+        let dirs_to_copy = gitman.clone().get_dir_names();
+        fileman::copy_files(
+            dirs_to_copy.to_owned(),
+            repo_path,
+            &get_absolute_path(LOCAL_SETTINGS_PATH)
+        ).unwrap();
+        return
+    }
+    // otherwise copy from local folder into git folder
+    let apps: Apps = Apps::new();
+    let app_names: Vec<String> = apps.items.into_iter().map(|app| app.name).collect();
+    fileman::copy_files(app_names, LOCAL_SETTINGS_PATH, repo_path).unwrap();
 }
 
 pub fn take_new_application() {
@@ -70,28 +89,31 @@ fn print_app_info(conf_path: &str, file_names: Vec<String>) {
 }
 
 fn get_paths(app: &App) -> (String, String) {
-    return (get_absolute_path(&app.config_path), "./".to_string() + &app.name + "/")
+    return (
+        get_absolute_path(&app.config_path),
+        get_absolute_path(&(LOCAL_SETTINGS_PATH.to_string() + &app.name))
+    )
 }
 
 fn app_copy_action(app: &App, from_local: bool) {
-    let (conf_path, rel_path) = get_paths(app);
-    print_app_info(&conf_path, app.clone().file_names);
+    let (app_conf_path, local_path) = get_paths(app);
+    print_app_info(&app_conf_path, app.clone().file_names);
     if from_local {
-        fileman::copy_files(app.clone().file_names, &conf_path, &rel_path).unwrap();
+        fileman::copy_files(app.clone().file_names, &app_conf_path, &local_path).unwrap();
         return
     }
-    fileman::copy_files(app.clone().file_names, &rel_path, &conf_path).unwrap();
+    fileman::copy_files(app.clone().file_names, &local_path, &app_conf_path).unwrap();
 }
 
 pub fn save_application(app_name: &str) {
-    logger::print_job("Syncing application ".to_owned() + &app_name);
+    logger::print_job("Saving application ".to_owned() + &app_name + " to local collection");
     let apps = &mut Apps::new();
     let app = apps.find_app_by_name(app_name);
     app_copy_action(&app, false);
 }
 
 pub fn save_all_applications() {
-    logger::print_job("Syncing all applications' settings".to_owned());
+    logger::print_job("Saving all applications' settings".to_owned());
     let apps = Apps::new();
     for app in apps.items.iter() {
         app_copy_action(app, false);
@@ -117,7 +139,7 @@ fn uninstall_pre(ru_sure: String, job_msg: String) -> Apps {
     let ans = are_you_sure(ru_sure, false);
     if !ans {
         logger::print_info("Exiting".to_owned());
-        std::process::exit(0);
+        exit(0);
     }
     logger::print_job(job_msg);
     Apps::new()
@@ -151,7 +173,7 @@ pub fn remove_application(app_name: &str) {
 
 fn exit_on_invalid() {
     logger::print_warn("Invalid option, exiting.".to_owned());
-    std::process::exit(0);
+    exit(0);
 }
 
 pub fn modify_application(app_name: &str) {
