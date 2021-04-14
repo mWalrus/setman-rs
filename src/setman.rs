@@ -12,9 +12,16 @@ mod fileman;
 mod readline;
 #[path = "config.rs"]
 mod config;
+#[path = "gitman.rs"]
+mod gitman;
 
 use fileman::{Apps, App};
+use gitman::GitRepo;
 use colored::*;
+
+pub fn sync_settings() {
+    let gitman = GitRepo::new();
+}
 
 pub fn take_new_application() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());
@@ -75,24 +82,18 @@ fn app_copy_action(app: &App, from_local: bool) {
     fileman::copy_files(app.clone().file_names, &rel_path, &conf_path).unwrap();
 }
 
-pub fn sync_application(app_name: &str, skip_push: bool) {
+pub fn save_application(app_name: &str) {
     logger::print_job("Syncing application ".to_owned() + &app_name);
     let apps = &mut Apps::new();
     let app = apps.find_app_by_name(app_name);
     app_copy_action(&app, false);
-    if !skip_push {
-        // git push command
-    }
 }
 
-pub fn sync_all_applications(skip_push: bool) {
+pub fn save_all_applications() {
     logger::print_job("Syncing all applications' settings".to_owned());
     let apps = Apps::new();
     for app in apps.items.iter() {
         app_copy_action(app, false);
-    }
-    if !skip_push {
-        // git push command
     }
 }
 

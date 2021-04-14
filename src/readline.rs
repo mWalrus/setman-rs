@@ -16,11 +16,11 @@ pub fn read(message: &str) -> String {
                 return line;
             },
             Err(ReadlineError::Interrupted) => {
-                println!("Ctrl-C");
+                println!("{} {}", "[!]".red().bold(), "Ctrl-C detected, exiting.");
                 exit(0)
             },
             Err(ReadlineError::Eof) => {
-                println!("Ctrl-D");
+                println!("{} {}", "[!]".red().bold(), "Ctrl-D detected, exiting.");
                 break
             },
             Err(err) => {

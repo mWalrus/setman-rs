@@ -21,48 +21,43 @@ fn main() {
 
     if matches.is_present("list") {
         setman::print_app_list();
-        exit(0);
     }
-    if matches.is_present("install") {
-        let app_name = matches.value_of("install").unwrap();
-        setman::install_application(app_name);
-        exit(0);
-    }
-    if matches.is_present("uninstall") {
-        let app_name = matches.value_of("uninstall").unwrap();
-        setman::uninstall_application(app_name);
-        exit(0);
-    }
-    if matches.is_present("sync") {
-        let app_name = matches.value_of("sync").unwrap();
-        setman::sync_application(app_name, matches.is_present("skip_push"));
-        exit(0);
-    }
-    if matches.is_present("install_all") {
-        setman::install_all_applications();
-        exit(0);
-    }
-    if matches.is_present("uninstall_all") {
-        setman::uninstall_all_applications();
-        exit(0);
-    }
-    if matches.is_present("sync_all") {
-        setman::sync_all_applications(matches.is_present("skip_push"));
-        exit(0);
-    }
-    if matches.is_present("new") {
-        setman::take_new_application();
-        exit(0);
-    }
-    if matches.is_present("remove_app") {
-        let app_name = matches.value_of("remove_app").unwrap();
-        setman::remove_application(app_name);
-    }
-    if matches.is_present("modify") {
-        let app_name = matches.value_of("modify").unwrap();
-        setman::modify_application(app_name);
+
+    match matches.subcommand() {
+        ("install", Some(sub_m)) => {
+            let app_name = sub_m.value_of("app").unwrap();
+            if app_name.eq("all") {
+                setman::install_all_applications();
+            }
+            setman::install_application(&app_name);
+            },
+        ("uninstall", Some(sub_m)) =>  {
+            let app_name = sub_m.value_of("app").unwrap();
+            if app_name.eq("all") {
+                setman::uninstall_all_applications();
+            }
+            setman::uninstall_application(&app_name);
+            },
+        ("save", Some(sub_m)) =>  {
+            let app_name = sub_m.value_of("app").unwrap();
+            if app_name.eq("all") {
+                setman::save_all_applications();
+            }
+            setman::save_application(&app_name);
+            },
+        ("modify", Some(sub_m)) =>  {
+            let app_name = sub_m.value_of("app").unwrap();
+            setman::modify_application(app_name)
+            },
+        ("remove", Some(sub_m)) =>  {
+            let app_name = sub_m.value_of("app").unwrap();
+            setman::remove_application(&app_name);
+            },
+        ("new", Some(_sub_m)) => setman::take_new_application(),
+        ("sync", Some(sub_m)) => {
+            let direction = sub_m.value_of("direction").unwrap();
+            setman::sync_settings(direction);
+        },
+        _ => exit(0),
     }
 }
-
-
-

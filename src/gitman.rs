@@ -33,5 +33,33 @@
 // (repository struct does not support this but RepoBuilder does)
 
 extern crate git2;
+extern crate uuid;
+extern crate toml;
+
+#[path = "fileman.rs"]
+mod fileman;
 
 use git2::Repository;
+use uuid::Uuid;
+use std::fs;
+use std::process::exit;
+
+static GIT_FILE: &str = "git.toml";
+
+pub struct GitRepo {
+    upstream_url: String,
+    git_dir_name: String,
+}
+
+impl GitRepo {
+    pub fn new() -> GitRepo {
+        GitRepo {
+            upstream_url: String::new(),
+            git_dir_name: Uuid::new_v4().to_string(),
+        }
+    }
+
+    fn read_upstream(self) {
+        let file_content = fs::read_to_string(GIT_FILE).unwrap();
+    }
+}
