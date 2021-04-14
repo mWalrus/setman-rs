@@ -10,8 +10,6 @@ mod logger;
 mod fileman;
 #[path = "readline.rs"]
 mod readline;
-#[path = "config.rs"]
-mod config;
 #[path = "gitman.rs"]
 mod gitman;
 
@@ -42,7 +40,6 @@ pub fn sync_settings(direction: &str) {
     let app_names: Vec<String> = apps.items.into_iter().map(|app| app.name).collect();
     fileman::copy_files(app_names, LOCAL_SETTINGS_PATH, repo_path).unwrap();
     let commit_msg = readline::read("Enter a commit message");
-    gitman.push_changes(&commit_msg);
 }
 
 pub fn take_new_application() {
