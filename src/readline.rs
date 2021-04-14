@@ -8,7 +8,7 @@ use std::process::exit;
 
 pub fn read(message: &str) -> String {
     let mut rl = Editor::<()>::new();
-    let colored_message = "[<] ".bright_cyan().bold().to_string() + message;
+    let colored_message = "[<] ".bright_cyan().bold().to_string() + message + ": ";
     loop {
         let readline = rl.readline(&colored_message);
         match readline {

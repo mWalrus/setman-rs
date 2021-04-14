@@ -7,6 +7,7 @@ mod logger;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::fs;
+use std::process::exit;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Apps {
@@ -48,7 +49,7 @@ impl Apps {
         let pos: Option<usize> = self.items.iter().position(|i| i.name == app_name);
         if pos == None {
             logger::print_warn("Application with name '".to_owned() + &app_name + "' could not be found");
-            std::process::exit(0);
+            exit(0);
         }
         let app = self.items.get(pos.unwrap()).unwrap();
         app.clone()

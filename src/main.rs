@@ -21,6 +21,7 @@ fn main() {
 
     if matches.is_present("list") {
         setman::print_app_list();
+        exit(0);
     }
 
     match matches.subcommand() {
@@ -28,6 +29,7 @@ fn main() {
             let app_name = sub_m.value_of("app").unwrap();
             if app_name.eq("all") {
                 setman::install_all_applications();
+                exit(0);
             }
             setman::install_application(&app_name);
             },
@@ -35,6 +37,7 @@ fn main() {
             let app_name = sub_m.value_of("app").unwrap();
             if app_name.eq("all") {
                 setman::uninstall_all_applications();
+                exit(0);
             }
             setman::uninstall_application(&app_name);
             },
@@ -42,6 +45,7 @@ fn main() {
             let app_name = sub_m.value_of("app").unwrap();
             if app_name.eq("all") {
                 setman::save_all_applications();
+                exit(0);
             }
             setman::save_application(&app_name);
             },

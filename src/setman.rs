@@ -41,13 +41,15 @@ pub fn sync_settings(direction: &str) {
     let apps: Apps = Apps::new();
     let app_names: Vec<String> = apps.items.into_iter().map(|app| app.name).collect();
     fileman::copy_files(app_names, LOCAL_SETTINGS_PATH, repo_path).unwrap();
+    let commit_msg = readline::read("Enter a commit message");
+    gitman.push_changes(&commit_msg);
 }
 
 pub fn take_new_application() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());
-    let app_name = readline::read("Enter Application name: ");
-    let app_config_path = readline::read("Config path (relative to home): ");
-    let config_files = readline::read("File names to save (space separated): ");
+    let app_name = readline::read("Enter Application name");
+    let app_config_path = readline::read("Config path (relative to home)");
+    let config_files = readline::read("File names to save (space separated)");
 
     let files_names = config_files.split_whitespace()
         .map(|f| f.to_string()).collect();
@@ -70,7 +72,7 @@ pub fn print_app_list() {
 
 fn are_you_sure(action: String, yes_favored: bool) -> bool {
     let formatted = if yes_favored {"Y/n"} else {"y/N"};
-    let ans = readline::read(&format!("Are you sure you want to {}? ({}): ", &action, formatted));
+    let ans = readline::read(&format!("Are you sure you want to {}? ({})", &action, formatted));
     match ans.to_lowercase().as_str() {
         "y" | "yes" => return true,
         "n" | "no" => return false,
@@ -181,20 +183,20 @@ pub fn modify_application(app_name: &str) {
     let mut app = apps.find_app_by_name(&app_name);
     logger::print_info("Modify ".to_owned() + &app_name);
     println!("    {} Name\n    {} Config path\n    {} File names", "1.".bold(), "2.".bold(), "3.".bold());
-    let ans: i32 = readline::read("Select field you want to edit: ").parse().unwrap_or(-1);
+    let ans: i32 = readline::read("Select field you want to edit").parse().unwrap_or(-1);
     match ans {
-        1 => app.name = readline::read("Enter a new name: "),
-        2 => app.config_path = readline::read("Enter a new config path: "),
+        1 => app.name = readline::read("Enter a new name"),
+        2 => app.config_path = readline::read("Enter a new config path"),
         3 => {
             let mut file_names = app.file_names.clone();
             for (i, name) in file_names.iter().enumerate() {
                 println!("    {} {}", ((i+1).to_string() + ".").bold(), name);
             }
-            let file_index: usize = readline::read("Select file name you want to edit: ").parse().unwrap_or(usize::MIN);
+            let file_index: usize = readline::read("Select file name you want to edit").parse().unwrap_or(usize::MIN);
             // handle invalid option
             if file_index.eq(&usize::MIN) || !(0..file_names.len()).contains(&(file_index - 1)) {exit_on_invalid()};
 
-            let new_file_name = readline::read("Enter a new file name: ");
+            let new_file_name = readline::read("Enter a new file name");
             file_names.remove(file_index - 1);
             file_names.insert(file_index - 1, new_file_name);
             app.file_names = file_names;
