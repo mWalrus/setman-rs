@@ -19,8 +19,9 @@ use fileman::{Apps, App};
 use gitman::GitRepo;
 use colored::*;
 
-pub fn sync_settings() {
+pub fn sync_settings(direction: &str) {
     let gitman = GitRepo::new();
+    gitman.get_settings();
 }
 
 pub fn take_new_application() {

@@ -41,12 +41,15 @@ extern crate serde;
 mod fileman;
 #[path = "readline.rs"]
 mod readline;
+#[path = "logger.rs"]
+mod logger;
 
 use git2::Repository;
 use uuid::Uuid;
-use std::{borrow::Borrow, fs};
+use std::{borrow::Borrow, fs::{self, DirEntry}};
 use std::process::exit;
-use serde::{Deserialize};
+use serde::Deserialize;
+use toml::Value;
 
 static GIT_FILE: &str = "git.toml";
 
@@ -54,22 +57,54 @@ static GIT_FILE: &str = "git.toml";
 pub struct GitRepo {
     upstream_url: String,
     git_dir_name: String,
+    git_dir_path: String,
 }
 
 impl GitRepo {
     pub fn new() -> GitRepo {
-        let file_content = fs::read_to_string(GIT_FILE).unwrap();
-        let parsed: GitRepo = toml::from_str(&file_content).unwrap();
+        let file_content = match fs::read_to_string(GIT_FILE) {
+            Ok(content) => content,
+            Err(_e) => {
+                logger::print_warn(format!("File {} not found, exiting", GIT_FILE));
+                exit(0);
+            }
+        };
+        let upstream_url: String = match toml::from_str::<Value>(&file_content) {
+            Ok(value) => value["upstream_url"].as_str().unwrap().to_string(),
+            Err(_e) => {
+                logger::print_warn("Upstream url not found, exiting".to_string());
+                exit(0);
+            }
+        };
+        let git_dir_name = Uuid::new_v4().to_string();
+        let git_dir_path = "/tmp/".to_string() + &git_dir_name;
         GitRepo {
-            upstream_url: parsed.upstream_url,
-            git_dir_name: Uuid::new_v4().to_string(),
+            upstream_url,
+            git_dir_name,
+            git_dir_path,
         }
     }
-    pub fn push_settings(self) {
-        let sudo_pass = readline::read("Enter sudo password: ");
-        let repo = Repository::clone(
-            self.upstream_url.borrow(),
-            &("/tmp".to_string() + self.git_dir_name.borrow()));
+    pub fn get_settings(self) {
+        let repo = self.clone_repo();
+        let directories = fs::read_dir(repo.workdir().unwrap()).unwrap();
+        for dir in directories {
+            let tmp = dir.unwrap();
+            // filter the entries to remove files and .git dir
+            if tmp.path().is_dir() && tmp.file_name().ne(".git") {
+                // something
+                println!("{:?}", tmp.path().to_str().unwrap());
+            }
+        }
+    }
 
+    fn clone_repo(self) -> Repository {
+        logger::print_job("Cloning down settings from ".to_string() + self.upstream_url.borrow());
+        match Repository::clone(self.upstream_url.borrow(), &(self.git_dir_path)) {
+            Ok(repo) => {
+                logger::print_info(format!("Cloned into {}", &(self.git_dir_path)));
+                repo
+            },
+            Err(e) => panic!("Failed to clone: {}", e),
+        }
     }
 }
