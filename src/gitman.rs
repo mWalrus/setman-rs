@@ -57,6 +57,7 @@ pub struct GitRepo {
     repo_path: String,
 }
 
+// TODO: implement push functionality
 impl GitRepo {
     pub fn new() -> GitRepo {
         let file_content = match fs::read_to_string(GIT_FILE) {
