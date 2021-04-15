@@ -8,7 +8,7 @@ mod readline;
 #[path = "logger.rs"]
 mod logger;
 
-use git2::{Commit, Error, IndexAddOption, Oid, Repository, RepositoryState, Signature, Time, Tree};
+use git2::{Commit, Error, IndexAddOption, Oid, PushOptions, Repository, RepositoryState, Signature, Time, Tree};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
@@ -86,18 +86,27 @@ impl GitRepo {
                 // get previous commit
                 let obj = repo.revparse_single("main")?;
                 let prev_commit = obj.as_commit().unwrap();
-                logger::print_info(format!("Found commit with SHA1 id: {}", prev_commit.id()));
                 let tree = prev_commit.tree().unwrap();
 
                 // Create commit
-                let result: Oid = match repo.commit(Some("HEAD"), &signature, &signature, &pretty_message, &tree, &[prev_commit]) {
+                let new_commit_id: Oid = match repo.commit(
+                    Some("HEAD"),
+                    &signature,
+                    &signature,
+                    &pretty_message,
+                    &tree, &[prev_commit])
+                {
                     Ok(commit) => commit,
                     Err(_e) => {
                         println!("Failed to create commit");
                         exit(0);
                     },
                 };
-                logger::print_info(format!("Created new commit with id: {}", result));
+                logger::print_info(format!("Created new commit with id: {}", new_commit_id));
+
+                // push to remote origin
+                let mut origin = repo.find_remote("origin")?;
+                origin.push(&["main"], Some(&mut PushOptions::new()))?;
                 Ok(())
             },
             Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
