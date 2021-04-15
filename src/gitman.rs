@@ -8,12 +8,12 @@ mod readline;
 #[path = "logger.rs"]
 mod logger;
 
-use git2::{Repository, Signature, Time, Tree};
+use git2::{Commit, Error, IndexAddOption, Oid, Repository, RepositoryState, Signature, Time, Tree};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
 use serde::Deserialize;
-use std::time::{SystemTime, UNIX_EPOCH};
+use toml::Value;
 
 static GIT_FILE: &str = "git.toml";
 
@@ -21,13 +21,6 @@ static GIT_FILE: &str = "git.toml";
 pub struct GitRepo {
     upstream_url: String,
     repo_path: String,
-    author: Author,
-}
-
-#[derive(Deserialize, Clone)]
-struct Author {
-    name: String,
-    email: String,
 }
 
 // TODO: implement push functionality
@@ -40,8 +33,8 @@ impl GitRepo {
                 exit(0);
             }
         };
-        let git_repo: GitRepo = match toml::from_str(&file_content) {
-            Ok(git_repo) => git_repo,
+        let upstream_url: String = match toml::from_str::<Value>(&file_content) {
+            Ok(value) => value["upstream_url"].as_str().unwrap().to_string(),
             Err(_e) => {
                 logger::print_warn("Upstream url not found, exiting".to_string());
                 exit(0);
@@ -49,9 +42,8 @@ impl GitRepo {
         };
         let repo_name = "setman-tmp".to_string() + &Uuid::new_v4().to_string();
         GitRepo {
-            upstream_url: git_repo.upstream_url,
+            upstream_url,
             repo_path: "/tmp/".to_string() + &repo_name,
-            author: git_repo.author,
         }
     }
     pub fn get_dir_names(self) -> Vec<String> {
@@ -73,21 +65,40 @@ impl GitRepo {
         self.repo_path.as_str()
     }
 
-    pub fn push_changes(self, commit_msg: &str) {
+    pub fn push_changes(self, commit_msg: &str) -> Result<(), Error>{
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
                 logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
-                let now = SystemTime::now();
-                let since_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
-                let time_in_seconds = since_epoch.as_secs() as i64;
-                logger::print_info(format!("Creating commit with message: {}", commit_msg));
-                let author = Signature::new(&self.author.name, &self.author.email, &Time::new(time_in_seconds, 120));
-                // TODO: stage a commit and execute it
+                let signature = repo.signature()?;
+                let pretty_message = git2::message_prettify(commit_msg, None)?;
+                let mut index = repo.index().expect("Failed to get repo index");
+                // Simulate git add *
+                logger::print_info("Staging files for commit".to_string());
+                index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
+                index.write()?;
 
-                //let result = match repo.commit(Some("HEAD"), author, author, commit_msg, Tree::from(repo).id(), parents) {
-                    //Ok(commit) => commit,
-                    //Err(e) => println!("Error: {}", e),
-                //};
+                // if no changes have been made we skip pushing to upstream
+                if repo.state() == RepositoryState::Clean {
+                    logger::print_info(format!("Worktree for repo {} is clean, skipping push", &self.repo_path));
+                    exit(0);
+                }
+
+                // get previous commit
+                let obj = repo.revparse_single("main")?;
+                let prev_commit = obj.as_commit().unwrap();
+                logger::print_info(format!("Found commit with SHA1 id: {}", prev_commit.id()));
+                let tree = prev_commit.tree().unwrap();
+
+                // Create commit
+                let result: Oid = match repo.commit(Some("HEAD"), &signature, &signature, &pretty_message, &tree, &[prev_commit]) {
+                    Ok(commit) => commit,
+                    Err(_e) => {
+                        println!("Failed to create commit");
+                        exit(0);
+                    },
+                };
+                logger::print_info(format!("Created new commit with id: {}", result));
+                Ok(())
             },
             Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
         }
