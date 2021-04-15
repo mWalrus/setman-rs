@@ -14,3 +14,7 @@ pub fn print_info(message: String) {
 pub fn print_warn(message: String) {
     println!("{} {}", "[!]".red().bold(), message);
 }
+
+pub fn print_new_app_header() {
+    println!("{} {}", "[-]".blue().bold(), "New application:".bold());
+}

@@ -17,6 +17,8 @@ fn main() {
         +#+ +#+            +#+   +#+       +#+ +#+     +#+ +#+  +#+#+#
 #+#    #+# #+#            #+#   #+#       #+# #+#     #+# #+#   #+#+#
 ########  ##########     ###   ###       ### ###     ### ###    ####       ".bold().blue(), "Application settings manager".bright_cyan().bold());
+    setman::check_path_existance();
+
     let matches = args::parse_args();
 
     if matches.is_present("list") {

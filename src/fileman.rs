@@ -4,6 +4,7 @@ extern crate serde;
 #[path = "logger.rs"]
 mod logger;
 
+use home::home_dir;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::fs;
@@ -22,7 +23,7 @@ pub struct App {
 }
 
 
-static APPS_FILE: &str = "apps.toml";
+static APPS_FILE: &str = "/.config/setman/apps.toml";
 
 impl App {
     pub fn new(name: String, config_path: String, file_names: Vec<String>) -> App {
@@ -36,8 +37,9 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
+        let apps_file = home_dir().unwrap().display().to_string() + APPS_FILE;
         // Replace this with a match statement handling fileNotFound and empty string errors
-        let mut file_content: String = fs::read_to_string(APPS_FILE).unwrap();
+        let mut file_content: String = fs::read_to_string(apps_file).unwrap();
         if file_content.len() < 2 {
             file_content = "items = []".to_string();
         }
@@ -66,12 +68,13 @@ impl Apps {
     }
 
     fn write_toml(&self) {
+        let apps_file = home_dir().unwrap().display().to_string() + APPS_FILE;
         let toml = toml::to_string(&self).unwrap();
-        fs::write(APPS_FILE, &toml).unwrap();
+        fs::write(apps_file, &toml).unwrap();
     }
 }
 
-fn dir_exists(path: &str) {
+pub fn dir_exists(path: &str) {
     if !Path::new(path).exists() {
         logger::print_warn("Couldn't find ".to_owned() + path);
         logger::print_info("Creating ".to_owned() + path);

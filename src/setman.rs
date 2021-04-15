@@ -19,8 +19,15 @@ use fileman::{Apps, App};
 use gitman::GitRepo;
 use colored::*;
 
-static _LOCAL_CONF_PATH: &str = ".config/setman/";
+static LOCAL_CONF_PATH: &str = ".config/setman/";
 static LOCAL_SETTINGS_PATH: &str = ".config/setman/settings/";
+
+pub fn check_path_existance() {
+    let local_conf_path = get_absolute_path(LOCAL_CONF_PATH);
+    let local_settings_path = get_absolute_path(LOCAL_SETTINGS_PATH);
+    fileman::dir_exists(&local_conf_path);
+    fileman::dir_exists(&&local_settings_path);
+}
 
 pub fn sync_settings(direction: &str) {
     let mut gitman = GitRepo::new();
@@ -36,7 +43,7 @@ pub fn sync_settings(direction: &str) {
         return
     }
     let commit_msg = readline::read("Enter a commit message");
-    gitman.push_changes(&commit_msg);
+    gitman.push_changes(&commit_msg).unwrap();
     // otherwise copy from local folder into git folder
     //let apps: Apps = Apps::new();
     //let app_names: Vec<String> = apps.items.into_iter().map(|app| app.name).collect();
@@ -45,7 +52,7 @@ pub fn sync_settings(direction: &str) {
 }
 
 pub fn take_new_application() {
-    println!("{} {}", "[-]".blue().bold(), "New application:".bold());
+    logger::print_new_app_header();
     let app_name = readline::read("Enter Application name");
     let app_config_path = readline::read("Config path (relative to home)");
     let config_files = readline::read("File names to save (space separated)");
