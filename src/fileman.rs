@@ -3,12 +3,14 @@ extern crate serde;
 
 #[path = "logger.rs"]
 mod logger;
+#[path = "paths.rs"]
+mod paths;
 
-use home::home_dir;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::fs;
 use std::process::exit;
+use paths::Paths;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Apps {
@@ -22,9 +24,6 @@ pub struct App {
     pub file_names: Vec<String>,
 }
 
-
-static APPS_FILE: &str = "/.config/setman/apps.toml";
-
 impl App {
     pub fn new(name: String, config_path: String, file_names: Vec<String>) -> App {
         App {
@@ -37,14 +36,21 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
-        let apps_file = home_dir().unwrap().display().to_string() + APPS_FILE;
-        // Replace this with a match statement handling fileNotFound and empty string errors
-        let mut file_content: String = fs::read_to_string(apps_file).unwrap();
-        if file_content.len() < 2 {
-            file_content = "items = []".to_string();
+        let file_content: String = match fs::read_to_string(Paths::new().apps_config_path) {
+            Ok(content) => content,
+            Err(e) => {
+                println!("Error opening file: {}", e);
+                exit(0);
+            }
+        };
+
+        match toml::from_str::<Apps>(&file_content) {
+            Ok(toml) => toml,
+            Err(e) => {
+                println!("Failed to parse toml: {}", e);
+                exit(0);
+            }
         }
-        let parsed: Apps = toml::from_str::<Apps>(&file_content).unwrap();
-        parsed
     }
 
     pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> App {
@@ -68,9 +74,8 @@ impl Apps {
     }
 
     fn write_toml(&self) {
-        let apps_file = home_dir().unwrap().display().to_string() + APPS_FILE;
         let toml = toml::to_string(&self).unwrap();
-        fs::write(apps_file, &toml).unwrap();
+        fs::write(Paths::new().apps_config_path, &toml).unwrap();
     }
 }
 

@@ -12,21 +12,20 @@ mod fileman;
 mod readline;
 #[path = "gitman.rs"]
 mod gitman;
+#[path = "paths.rs"]
+mod paths;
 
 use std::process::exit;
 
 use fileman::{Apps, App};
 use gitman::GitRepo;
 use colored::*;
-
-static LOCAL_CONF_PATH: &str = ".config/setman/";
-static LOCAL_SETTINGS_PATH: &str = ".config/setman/settings/";
+use paths::Paths;
 
 pub fn check_path_existance() {
-    let local_conf_path = get_absolute_path(LOCAL_CONF_PATH);
-    let local_settings_path = get_absolute_path(LOCAL_SETTINGS_PATH);
-    fileman::dir_exists(&local_conf_path);
-    fileman::dir_exists(&&local_settings_path);
+    let paths = Paths::new();
+    fileman::dir_exists(&paths.user_conf_path);
+    fileman::dir_exists(&paths.settings_path);
 }
 
 pub fn sync_settings(direction: &str) {
@@ -38,7 +37,7 @@ pub fn sync_settings(direction: &str) {
         fileman::copy_files(
             dirs_to_copy.to_owned(),
             repo_path,
-            &get_absolute_path(LOCAL_SETTINGS_PATH)
+            &Paths::new().settings_path
         ).unwrap();
         return
     }
@@ -61,11 +60,6 @@ pub fn take_new_application() {
         .map(|f| f.to_string()).collect();
     let mut apps = Apps::new();
     apps.save_new_app(App::new(app_name, app_config_path, files_names));
-}
-
-// Gets the absolute path to a config directory
-fn get_absolute_path(relative_path: &str) -> String {
-    home::home_dir().unwrap().display().to_string() + "/" + relative_path + "/"
 }
 
 pub fn print_app_list() {
@@ -96,21 +90,16 @@ fn print_app_info(conf_path: &str, file_names: Vec<String>) {
     }
 }
 
-fn get_paths(app: &App) -> (String, String) {
-    return (
-        get_absolute_path(&app.config_path),
-        get_absolute_path(&(LOCAL_SETTINGS_PATH.to_string() + &app.name))
-    )
-}
-
 fn app_copy_action(app: &App, from_local: bool) {
-    let (app_conf_path, local_path) = get_paths(app);
+    let paths = Paths::new();
+    let app_local_path = paths.clone().get_app_path(&app.name);
+    let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
     print_app_info(&app_conf_path, app.clone().file_names);
     if from_local {
-        fileman::copy_files(app.clone().file_names, &app_conf_path, &local_path).unwrap();
+        fileman::copy_files(app.clone().file_names, &app_conf_path, &app_local_path).unwrap();
         return
     }
-    fileman::copy_files(app.clone().file_names, &local_path, &app_conf_path).unwrap();
+    fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
 }
 
 pub fn save_application(app_name: &str) {
@@ -158,16 +147,16 @@ pub fn uninstall_application(app_name: &str) {
         "uninstall ".to_owned() + &app_name,
         "Uninstalling ".to_owned() + &app_name);
     let app = apps.find_app_by_name(&app_name);
-    let conf_path = get_absolute_path(&app.config_path);
-    fileman::remove_files(&conf_path);
+    fileman::remove_files(&Paths::new().get_app_path(&app.name));
 }
 
 pub fn uninstall_all_applications() {
     let apps = uninstall_pre(
         "uninstall all applications' settings".to_owned(),
         "Uninstalling all applications".to_owned());
+    let paths = Paths::new();
     for app in apps.items.iter() {
-        let conf_path = get_absolute_path(&app.config_path);
+        let conf_path = paths.clone().get_app_path(&app.name);
         print_app_info(&conf_path, app.clone().file_names);
         fileman::remove_files(&conf_path);
     }
