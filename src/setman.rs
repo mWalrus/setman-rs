@@ -35,11 +35,13 @@ pub fn sync_settings(direction: &str) {
         ).unwrap();
         return
     }
-    // otherwise copy from local folder into git folder
-    let apps: Apps = Apps::new();
-    let app_names: Vec<String> = apps.items.into_iter().map(|app| app.name).collect();
-    fileman::copy_files(app_names, LOCAL_SETTINGS_PATH, repo_path).unwrap();
     let commit_msg = readline::read("Enter a commit message");
+    gitman.push_changes(&commit_msg);
+    // otherwise copy from local folder into git folder
+    //let apps: Apps = Apps::new();
+    //let app_names: Vec<String> = apps.items.into_iter().map(|app| app.name).collect();
+    //fileman::copy_files(app_names, LOCAL_SETTINGS_PATH, repo_path).unwrap();
+
 }
 
 pub fn take_new_application() {

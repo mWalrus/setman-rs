@@ -8,12 +8,12 @@ mod readline;
 #[path = "logger.rs"]
 mod logger;
 
-use git2::Repository;
+use git2::{Repository, Signature, Time, Tree};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
 use serde::Deserialize;
-use toml::Value;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 static GIT_FILE: &str = "git.toml";
 
@@ -21,6 +21,13 @@ static GIT_FILE: &str = "git.toml";
 pub struct GitRepo {
     upstream_url: String,
     repo_path: String,
+    author: Author,
+}
+
+#[derive(Deserialize, Clone)]
+struct Author {
+    name: String,
+    email: String,
 }
 
 // TODO: implement push functionality
@@ -33,18 +40,18 @@ impl GitRepo {
                 exit(0);
             }
         };
-        let upstream_url: String = match toml::from_str::<Value>(&file_content) {
-            Ok(value) => value["upstream_url"].as_str().unwrap().to_string(),
+        let git_repo: GitRepo = match toml::from_str(&file_content) {
+            Ok(git_repo) => git_repo,
             Err(_e) => {
                 logger::print_warn("Upstream url not found, exiting".to_string());
                 exit(0);
             }
         };
         let repo_name = "setman-tmp".to_string() + &Uuid::new_v4().to_string();
-        let repo_path = "/tmp/".to_string() + &repo_name;
         GitRepo {
-            upstream_url,
-            repo_path,
+            upstream_url: git_repo.upstream_url,
+            repo_path: "/tmp/".to_string() + &repo_name,
+            author: git_repo.author,
         }
     }
     pub fn get_dir_names(self) -> Vec<String> {
@@ -64,6 +71,26 @@ impl GitRepo {
 
     pub fn get_repo_path(&self) -> &str {
         self.repo_path.as_str()
+    }
+
+    pub fn push_changes(self, commit_msg: &str) {
+        match Repository::open(&self.repo_path) {
+            Ok(repo) => {
+                logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
+                let now = SystemTime::now();
+                let since_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
+                let time_in_seconds = since_epoch.as_secs() as i64;
+                logger::print_info(format!("Creating commit with message: {}", commit_msg));
+                let author = Signature::new(&self.author.name, &self.author.email, &Time::new(time_in_seconds, 120));
+                // TODO: stage a commit and execute it
+
+                //let result = match repo.commit(Some("HEAD"), author, author, commit_msg, Tree::from(repo).id(), parents) {
+                    //Ok(commit) => commit,
+                    //Err(e) => println!("Error: {}", e),
+                //};
+            },
+            Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
+        }
     }
 
     pub fn clone_repo(&mut self) {
