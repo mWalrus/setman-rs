@@ -2,12 +2,13 @@ extern crate git2;
 extern crate uuid;
 extern crate toml;
 extern crate serde;
-extern crate home;
 
 #[path = "readline.rs"]
 mod readline;
 #[path = "logger.rs"]
 mod logger;
+#[path = "paths.rs"]
+mod paths;
 
 use git2::{Error, IndexAddOption, Oid, PushOptions, Repository, RepositoryState};
 use uuid::Uuid;
@@ -15,9 +16,7 @@ use std::fs;
 use std::process::exit;
 use serde::Deserialize;
 use toml::Value;
-use home::home_dir;
-
-static GIT_FILE: &str = ".config/setman/git.toml";
+use paths::Paths;
 
 #[derive(Deserialize, Clone)]
 pub struct GitRepo {
@@ -28,11 +27,11 @@ pub struct GitRepo {
 // TODO: implement push functionality
 impl GitRepo {
     pub fn new() -> GitRepo {
-        let git_file_absolute = home_dir().unwrap().display().to_string() + GIT_FILE;
-        let file_content = match fs::read_to_string(&git_file_absolute) {
+        let git_config_path = Paths::new().git_config_path;
+        let file_content = match fs::read_to_string(&git_config_path) {
             Ok(content) => content,
             Err(_e) => {
-                logger::print_warn(format!("File {} not found, exiting", git_file_absolute));
+                logger::print_warn(format!("File {} not found, exiting", git_config_path));
                 exit(0);
             }
         };

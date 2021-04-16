@@ -29,6 +29,7 @@ pub fn check_path_existance() {
 }
 
 pub fn sync_settings(direction: &str) {
+    let settings_path = &Paths::new().settings_path;
     let mut gitman = GitRepo::new();
     gitman.clone_repo();
     let repo_path = gitman.get_repo_path();
@@ -37,17 +38,21 @@ pub fn sync_settings(direction: &str) {
         fileman::copy_files(
             dirs_to_copy.to_owned(),
             repo_path,
-            &Paths::new().settings_path
+            &settings_path
         ).unwrap();
         return
     }
+    let dir_names = fileman::get_dir_names_in_path(&settings_path);
+    let mut apps = Apps::new();
+    for dir_name in dir_names {
+        let app = apps.find_app_by_name(&dir_name);
+        let file_names = app.file_names;
+        let source = settings_path.to_string() + "/" + &app.name;
+        let dest = repo_path.to_string() + &app.name;
+        fileman::copy_files(file_names, &source, &dest).unwrap();
+    }
     let commit_msg = readline::read("Enter a commit message");
     gitman.push_changes(&commit_msg).unwrap();
-    // otherwise copy from local folder into git folder
-    //let apps: Apps = Apps::new();
-    //let app_names: Vec<String> = apps.items.into_iter().map(|app| app.name).collect();
-    //fileman::copy_files(app_names, LOCAL_SETTINGS_PATH, repo_path).unwrap();
-
 }
 
 pub fn take_new_application() {
@@ -96,10 +101,10 @@ fn app_copy_action(app: &App, from_local: bool) {
     let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
     print_app_info(&app_conf_path, app.clone().file_names);
     if from_local {
-        fileman::copy_files(app.clone().file_names, &app_conf_path, &app_local_path).unwrap();
+        fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
         return
     }
-    fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
+    fileman::copy_files(app.clone().file_names, &app_conf_path, &app_local_path).unwrap();
 }
 
 pub fn save_application(app_name: &str) {

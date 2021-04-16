@@ -87,12 +87,26 @@ pub fn dir_exists(path: &str) {
     };
 }
 
+pub fn get_dir_names_in_path(dir_path: &str) -> Vec<String> {
+    let read = Path::new(dir_path).read_dir().unwrap();
+    let mut result: Vec<String> = Vec::new();
+    for entry in read {
+        let tmp = entry.unwrap();
+        if tmp.path().is_dir() {
+            result.push(tmp.file_name().to_str().unwrap().to_string());
+        }
+    }
+    result
+}
+
 pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> std::io::Result<()> {
     dir_exists(source);
     dir_exists(dest);
     for file in file_names {
-        let source_path = source.to_string() + &file;
-        let dest_path = dest.to_string() + &file;
+        let source_path = source.to_string() + "/" + &file;
+        let dest_path = dest.to_string() + "/" + &file;
+        //println!("Source path: {}", source_path);
+        //println!("Dest path: {}", dest_path);
         // check if source file exists before attempting copy
         assert!(Path::new(&source_path).exists());
         fs::copy(source_path, dest_path)?;
