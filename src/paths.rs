@@ -16,8 +16,8 @@ impl Paths {
         Paths {
             user_conf_path: home_dir().unwrap().display().to_string()  + "/.config/setman",
             settings_path: home_dir().unwrap().display().to_string() + "/.config/setman/settings",
-            apps_config_path: home_dir().unwrap().display().to_string() + "/.config/apps.toml",
-            git_config_path: home_dir().unwrap().display().to_string() + "/.config/git.toml",
+            apps_config_path: home_dir().unwrap().display().to_string() + "/.config/setman/apps.toml",
+            git_config_path: home_dir().unwrap().display().to_string() + "/.config/setman/git.toml",
         }
     }
 
