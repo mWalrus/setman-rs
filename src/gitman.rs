@@ -80,10 +80,10 @@ impl GitRepo {
                 index.write()?;
 
                 // if no changes have been made we skip pushing to upstream
-                if repo.state() == RepositoryState::Clean {
-                    logger::print_info(format!("Worktree for repo {} is clean, skipping push", &self.repo_path));
-                    exit(0);
-                }
+                //if repo.state() == RepositoryState::Clean {
+                    //logger::print_info(format!("Worktree for repo {} is clean, skipping push", &self.repo_path));
+                    //exit(0);
+                //}
 
                 // get previous commit
                 let obj = repo.revparse_single("main")?;

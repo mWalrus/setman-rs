@@ -52,6 +52,7 @@ pub fn sync_settings(direction: &str) {
         fileman::copy_files(file_names, &source, &dest).unwrap();
     }
     let commit_msg = readline::read("Enter a commit message");
+    // TODO: error when pushing, "remote authentication required"
     gitman.push_changes(&commit_msg).unwrap();
 }
 
