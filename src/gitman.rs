@@ -10,7 +10,7 @@ mod logger;
 #[path = "paths.rs"]
 mod paths;
 
-use git2::{Cred, Error, IndexAddOption, Oid, PushOptions, Repository, RepositoryState};
+use git2::{Cred, CredentialType, Error, IndexAddOption, Oid, PushOptions, Reference, RemoteCallbacks, Repository};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
@@ -42,12 +42,13 @@ impl GitRepo {
                 exit(0);
             }
         };
-        let repo_name = "setman-tmp".to_string() + &Uuid::new_v4().to_string();
+        let repo_name = "setman-tmp-".to_string() + &Uuid::new_v4().to_string();
         GitRepo {
             upstream_url,
             repo_path: "/tmp/".to_string() + &repo_name,
         }
     }
+
     pub fn get_dir_names(self) -> Vec<String> {
         let directories = fs::read_dir(&self.repo_path).unwrap();
         let mut dirs_names: Vec<String> = Vec::new();
@@ -72,12 +73,11 @@ impl GitRepo {
             Ok(repo) => {
                 logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
                 let signature = repo.signature()?;
-                println!("Signature: {:#?}", signature.name());
                 let pretty_message = git2::message_prettify(commit_msg, None)?;
                 let mut index = repo.index().expect("Failed to get repo index");
                 // Simulate git add *
                 logger::print_info("Staging files for commit".to_string());
-                index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
+                index.add_all(["."].iter(), IndexAddOption::DEFAULT, None)?;
                 index.write()?;
 
                 // if no changes have been made we skip pushing to upstream
@@ -87,38 +87,48 @@ impl GitRepo {
                 //}
 
                 // get previous commit
-                let obj = repo.revparse_single("main")?;
+                let obj = match repo.revparse_single("main") {
+                    Ok(obj) => obj,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        exit(0)
+                    },
+                };
                 let prev_commit = obj.as_commit().unwrap();
                 let tree = prev_commit.tree().unwrap();
 
                 // Create commit
                 let new_commit_id: Oid = match repo.commit(
-                    Some("HEAD"),
+                    None,
                     &signature,
                     &signature,
                     &pretty_message,
                     &tree, &[prev_commit])
                 {
                     Ok(commit) => commit,
-                    Err(_e) => {
-                        println!("Failed to create commit");
+                    Err(e) => {
+                        println!("Failed to create commit: {}", e);
                         exit(0);
                     },
                 };
                 logger::print_info(format!("Created new commit with id: {}", new_commit_id));
 
                 // push to remote origin
+
+                let mut callbacks = RemoteCallbacks::new();
+                callbacks.credentials(|_str, _option, _cred_type| {
+                    let password = readline::password("Enter your git password");
+                    println!("Password: {}", password);
+                    Cred::userpass_plaintext(signature.name().unwrap(), &password)
+                });
+                let mut push_opts = PushOptions::new();
+                push_opts.remote_callbacks(callbacks);
                 let mut origin = repo.find_remote("origin")?;
-                origin.push(&["main"], Some(&mut PushOptions::new()))?;
+                origin.push(&["refs/remotes/origin/main"], Some(&mut push_opts))?;
                 Ok(())
             },
             Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
         }
-    }
-
-    fn authenticate(self, username: &str) -> Result<PushOptions, Error> {
-        let cred = Cred::userpass_plaintext(username, "password").unwrap();
-        Ok(PushOptions::new())
     }
 
     pub fn clone_repo(&mut self) {

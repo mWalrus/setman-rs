@@ -3,7 +3,6 @@ extern crate toml;
 extern crate serde;
 extern crate home;
 
-
 #[path = "logger.rs"]
 mod logger;
 #[path = "fileman.rs"]
@@ -16,7 +15,6 @@ mod gitman;
 mod paths;
 
 use std::process::exit;
-
 use fileman::{Apps, App};
 use gitman::GitRepo;
 use colored::*;
