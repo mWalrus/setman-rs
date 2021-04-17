@@ -10,7 +10,7 @@ mod logger;
 #[path = "paths.rs"]
 mod paths;
 
-use git2::{Error, IndexAddOption, Oid, PushOptions, Repository, RepositoryState};
+use git2::{Cred, Error, IndexAddOption, Oid, PushOptions, Repository, RepositoryState};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
@@ -72,6 +72,7 @@ impl GitRepo {
             Ok(repo) => {
                 logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
                 let signature = repo.signature()?;
+                println!("Signature: {:#?}", signature.name());
                 let pretty_message = git2::message_prettify(commit_msg, None)?;
                 let mut index = repo.index().expect("Failed to get repo index");
                 // Simulate git add *
@@ -113,6 +114,11 @@ impl GitRepo {
             },
             Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
         }
+    }
+
+    fn authenticate(self, username: &str) -> Result<PushOptions, Error> {
+        let cred = Cred::userpass_plaintext(username, "password").unwrap();
+        Ok(PushOptions::new())
     }
 
     pub fn clone_repo(&mut self) {

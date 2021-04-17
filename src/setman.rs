@@ -76,17 +76,6 @@ pub fn print_app_list() {
     }
 }
 
-fn are_you_sure(action: String, yes_favored: bool) -> bool {
-    let formatted = if yes_favored {"Y/n"} else {"y/N"};
-    let ans = readline::read(&format!("Are you sure you want to {}? ({})", &action, formatted));
-    match ans.to_lowercase().as_str() {
-        "y" | "yes" => return true,
-        "n" | "no" => return false,
-        "" => return yes_favored,
-        _ => return false
-    }
-}
-
 // Prints general information about an app
 fn print_app_info(conf_path: &str, file_names: Vec<String>) {
     logger::print_info("Found app config path: ".to_owned() + conf_path);
@@ -139,7 +128,7 @@ pub fn install_all_applications() {
 }
 
 fn uninstall_pre(ru_sure: String, job_msg: String) -> Apps {
-    let ans = are_you_sure(ru_sure, false);
+    let ans = readline::are_you_sure(ru_sure);
     if !ans {
         logger::print_info("Exiting".to_owned());
         exit(0);
@@ -170,6 +159,7 @@ pub fn uninstall_all_applications() {
 
 pub fn remove_application(app_name: &str) {
     logger::print_warn("Removing ".to_owned() + &app_name);
+    readline::are_you_sure("Remove ".to_string() + app_name);
     let mut apps = Apps::new();
     apps.remove_app(app_name);
 }
@@ -182,31 +172,27 @@ fn exit_on_invalid() {
 pub fn modify_application(app_name: &str) {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name);
-    logger::print_info("Modify ".to_owned() + &app_name);
-    println!("    {} Name\n    {} Config path\n    {} File names", "1.".bold(), "2.".bold(), "3.".bold());
-    let ans: i32 = readline::read("Select field you want to edit").parse().unwrap_or(-1);
+    logger::print_job("Modify ".to_owned() + &app_name);
+    let mod_options = vec!["Name", "Config path", "File names"];
+    let ans: usize = readline::select(mod_options.clone());
     match ans {
-        1 => app.name = readline::read("Enter a new name"),
-        2 => app.config_path = readline::read("Enter a new config path"),
-        3 => {
-            let mut file_names = app.file_names.clone();
-            for (i, name) in file_names.iter().enumerate() {
-                println!("    {} {}", ((i+1).to_string() + ".").bold(), name);
-            }
-            let file_index: usize = readline::read("Select file name you want to edit").parse().unwrap_or(usize::MIN);
-            // handle invalid option
-            if file_index.eq(&usize::MIN) || !(0..file_names.len()).contains(&(file_index - 1)) {exit_on_invalid()};
+        0 => app.name = readline::read("Enter a new name"),
+        1 => app.config_path = readline::read("Enter a new config path"),
+        2 => {
+            let mut file_names = app.file_names;
+            let file_names_str = file_names.iter().map(|name| name.as_str()).collect();
+            let file_index: usize = readline::select(file_names_str);
 
             let new_file_name = readline::read("Enter a new file name");
-            file_names.remove(file_index - 1);
-            file_names.insert(file_index - 1, new_file_name);
+            file_names.remove(file_index);
+            file_names.insert(file_index, new_file_name);
             app.file_names = file_names;
 
         },
         _ => exit_on_invalid(),
     }
     // make sure user wants to modify the application
-    if are_you_sure("modify ".to_owned() + &app_name, true) {
+    if readline::are_you_sure("modify ".to_owned() + &app_name) {
         apps.remove_app(app_name);
         apps.save_new_app(app);
     }
