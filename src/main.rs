@@ -30,7 +30,6 @@ fn main() {
                 _ => false,
             };
             setman::print_app_list(verbose);
-            exit(0);
         },
         ("install", Some(sub_m)) => {
             perform_action(
@@ -53,11 +52,11 @@ fn main() {
         ("modify", Some(sub_m)) =>  {
             let app_name = sub_m.value_of("app").unwrap();
             setman::modify_application(app_name)
-            },
+        },
         ("remove", Some(sub_m)) =>  {
             let app_name = sub_m.value_of("app").unwrap();
             setman::remove_application(&app_name);
-            },
+        },
         ("new", Some(_sub_m)) => setman::take_new_application(),
         ("sync", Some(sub_m)) => {
             let direction = sub_m.value_of("direction").unwrap().to_lowercase();
@@ -71,7 +70,6 @@ fn perform_action(sub_command: &ArgMatches, single: Box<dyn FnOnce(&str)>, multi
     let app_name = sub_command.value_of("app").unwrap();
     if app_name.eq("all") {
         multi();
-        exit(0);
     }
     single(&app_name);
 }
