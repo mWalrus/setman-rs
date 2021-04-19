@@ -5,6 +5,7 @@ extern crate colored;
 mod args;
 mod setman;
 
+use clap::ArgMatches;
 use colored::*;
 use std::process::exit;
 
@@ -28,29 +29,23 @@ fn main() {
             exit(0);
         },
         ("install", Some(sub_m)) => {
-            let app_name = sub_m.value_of("app").unwrap();
-            if app_name.eq("all") {
-                setman::install_all_applications();
-                exit(0);
-            }
-            setman::install_application(&app_name);
-            },
+            perform_action(
+                sub_m,
+                Box::new(setman::install_application),
+                Box::new(setman::install_all_applications))
+        },
         ("uninstall", Some(sub_m)) =>  {
-            let app_name = sub_m.value_of("app").unwrap();
-            if app_name.eq("all") {
-                setman::uninstall_all_applications();
-                exit(0);
-            }
-            setman::uninstall_application(&app_name);
-            },
+            perform_action(
+                sub_m,
+                Box::new(setman::uninstall_application),
+                Box::new(setman::uninstall_all_applications))
+        },
         ("save", Some(sub_m)) =>  {
-            let app_name = sub_m.value_of("app").unwrap();
-            if app_name.eq("all") {
-                setman::save_all_applications();
-                exit(0);
-            }
-            setman::save_application(&app_name);
-            },
+            perform_action(
+                sub_m,
+                Box::new(setman::save_application),
+                Box::new(setman::save_all_applications))
+        },
         ("modify", Some(sub_m)) =>  {
             let app_name = sub_m.value_of("app").unwrap();
             setman::modify_application(app_name)
@@ -66,4 +61,13 @@ fn main() {
         },
         _ => exit(0),
     }
+}
+
+fn perform_action(sub_command: &ArgMatches, single: Box<dyn Fn(&str)>, multi: Box<dyn FnOnce()>) {
+    let app_name = sub_command.value_of("app").unwrap();
+    if app_name.eq("all") {
+        multi();
+        exit(0);
+    }
+    single(&app_name);
 }

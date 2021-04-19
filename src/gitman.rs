@@ -10,7 +10,15 @@ mod logger;
 #[path = "paths.rs"]
 mod paths;
 
-use git2::{Cred, Error, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository};
+use git2::{
+    Cred,
+    Error,
+    IndexAddOption,
+    Oid,
+    PushOptions,
+    RemoteCallbacks,
+    Repository,
+    RepositoryState};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
@@ -73,18 +81,20 @@ impl GitRepo {
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
                 logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
+                // if no changes have been made we skip pushing to upstream
+                if repo.state() == RepositoryState::Clean {
+                    logger::print_info(format!("Worktree for repo {} is clean, skipping push", &self.repo_path));
+                    exit(0);
+                }
+
                 let signature = repo.signature()?;
                 let mut index = repo.index().expect("Failed to get repo index");
-                // Simulate git add *
+                // git add .
                 logger::print_job("Staging files for commit".to_string());
                 index.add_all(["."].iter(), IndexAddOption::DEFAULT, None)?;
                 index.write()?;
 
-                // if no changes have been made we skip pushing to upstream
-                //if repo.state() == RepositoryState::Clean {
-                    //logger::print_info(format!("Worktree for repo {} is clean, skipping push", &self.repo_path));
-                    //exit(0);
-                //}
+
 
                 // get previous commit
                 let parent_obj = match repo.revparse_single("origin") {
@@ -95,6 +105,8 @@ impl GitRepo {
                     },
                 };
                 let parent = parent_obj.as_commit().unwrap();
+
+                // get index tree
                 let tree_id = index.write_tree()?;
                 let tree = repo.find_tree(tree_id)?;
 
