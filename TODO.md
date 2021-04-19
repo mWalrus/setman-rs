@@ -1,5 +1,7 @@
 # TODO
 - [x] List verbose option
+- [ ] DRY
+- [ ] Move functions to their respective files
 - [ ] List search app function (glob, pattern, literal)
 - [ ] SSH authentication (gitlab)
 - [ ] Compare local files to upstream

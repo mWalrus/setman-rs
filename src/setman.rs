@@ -69,15 +69,15 @@ pub fn take_new_application() {
 }
 
 pub fn print_app_list(verbose: bool) {
-    logger::print_info("Found applications:".to_owned());
+    logger::print_info("Applications:".to_string());
     let apps = Apps::new();
-    for app in apps.items.iter() {
-        println!("  {} {}", "-".bold().bright_purple(), app.name);
+    for app in apps.items {
+        println!("  {} {}", "-".bold().bright_purple(), app.name.bold());
         if verbose {
             println!("      {} {}", "Config path =>".bold().bright_cyan(), app.config_path);
             println!("      {}", "File names:".bold().bright_green());
-            for file_name in &app.file_names {
-                println!("          {} {}", "=>".bold().bright_green(), file_name);
+            for file in app.file_names {
+                println!("          {} {}", "=>".bold().bright_green(), file);
             }
         }
     }
