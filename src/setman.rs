@@ -31,27 +31,29 @@ pub fn sync_settings(direction: &str) {
     let mut gitman = GitRepo::new();
     gitman.clone_repo();
     let repo_path = gitman.get_repo_path();
-    if direction.eq("down") {
-        let dirs_to_copy = gitman.clone().get_dir_names();
-        fileman::copy_files(
-            dirs_to_copy.to_owned(),
-            repo_path,
-            &settings_path
-        ).unwrap();
-        return
+    match direction {
+        "up" => {
+            let dir_names = fileman::get_dir_names_in_path(&settings_path);
+            let mut apps = Apps::new();
+            for dir_name in dir_names {
+                let app = apps.find_app_by_name(&dir_name).unwrap();
+                let file_names = app.file_names;
+                let source = settings_path.to_string() + "/" + &app.name;
+                let dest = repo_path.to_string() + &app.name;
+                fileman::copy_files(file_names, &source, &dest).unwrap();
+            }
+            gitman.push_changes().unwrap();
+        },
+        "down" => {
+            let dirs_to_copy = gitman.clone().get_dir_names();
+            fileman::copy_files(
+                dirs_to_copy.to_owned(),
+                repo_path,
+                &settings_path
+            ).unwrap();
+        }
+        _ => exit(0),
     }
-    let dir_names = fileman::get_dir_names_in_path(&settings_path);
-    let mut apps = Apps::new();
-    for dir_name in dir_names {
-        let app = apps.find_app_by_name(&dir_name).unwrap();
-        let file_names = app.file_names;
-        let source = settings_path.to_string() + "/" + &app.name;
-        let dest = repo_path.to_string() + &app.name;
-        fileman::copy_files(file_names, &source, &dest).unwrap();
-    }
-    let commit_msg = readline::read("Enter a commit message");
-    // TODO: error when pushing, "remote authentication required"
-    gitman.push_changes(&commit_msg).unwrap();
 }
 
 pub fn take_new_application() {

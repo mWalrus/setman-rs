@@ -35,6 +35,7 @@ impl GitRepo {
                 exit(0);
             }
         };
+        // maybe add test repo for dev purpose
         let upstream_url: String = match toml::from_str::<Value>(&file_content) {
             Ok(value) => value["upstream_url"].as_str().unwrap().to_string(),
             Err(_e) => {
@@ -68,15 +69,14 @@ impl GitRepo {
         self.repo_path.as_str()
     }
 
-    pub fn push_changes(self, commit_msg: &str) -> Result<(), Error>{
+    pub fn push_changes(self) -> Result<(), Error>{
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
                 logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
                 let signature = repo.signature()?;
-                let pretty_message = git2::message_prettify(commit_msg, None)?;
                 let mut index = repo.index().expect("Failed to get repo index");
                 // Simulate git add *
-                logger::print_info("Staging files for commit".to_string());
+                logger::print_job("Staging files for commit".to_string());
                 index.add_all(["."].iter(), IndexAddOption::DEFAULT, None)?;
                 index.write()?;
 
@@ -87,23 +87,26 @@ impl GitRepo {
                 //}
 
                 // get previous commit
-                let obj = match repo.revparse_single("HEAD") {
+                let parent_obj = match repo.revparse_single("origin") {
                     Ok(obj) => obj,
                     Err(e) => {
                         eprintln!("Error: {}", e);
                         exit(0)
                     },
                 };
-                let prev_commit = obj.as_commit().unwrap();
-                let tree = prev_commit.tree().unwrap();
+                let parent = parent_obj.as_commit().unwrap();
+                let tree_id = index.write_tree()?;
+                let tree = repo.find_tree(tree_id)?;
 
                 // Create commit
+                let commit_msg = readline::read("Enter a commit message");
+                let pretty_message = git2::message_prettify(commit_msg, None)?;
                 let new_commit_id: Oid = match repo.commit(
-                    None,
+                    Some("HEAD"),
                     &signature,
                     &signature,
                     &pretty_message,
-                    &tree, &[prev_commit])
+                    &tree, &[parent])
                 {
                     Ok(commit) => commit,
                     Err(e) => {
@@ -114,18 +117,20 @@ impl GitRepo {
                 logger::print_info(format!("Created new commit with id: {}", new_commit_id));
 
                 // push to remote origin
-
                 let mut callbacks = RemoteCallbacks::new();
                 callbacks.credentials(|_str, _option, _cred_type| {
                     let password = readline::password("Enter your git password");
                     //println!("Password: {}", password);
                     Cred::userpass_plaintext(signature.name().unwrap(), &password)
                 });
+
                 let mut push_opts = PushOptions::new();
                 push_opts.remote_callbacks(callbacks);
+
                 let mut origin = repo.find_remote("origin")?;
-                logger::print_info(format!("Pushing to remote: {}", origin.name().unwrap()));
-                origin.push(&["refs/remotes/origin/main"], Some(&mut push_opts))?;
+                logger::print_job(format!("Pushing to remote: {}", origin.name().unwrap()));
+                origin.push(&["refs/heads/main"], Some(&mut push_opts))?;
+                logger::print_info("Done!".to_string());
                 Ok(())
             },
             Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
