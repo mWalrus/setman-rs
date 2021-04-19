@@ -1,4 +1,5 @@
 # TODO
+- [x] List verbose option
 - [ ] List search app function (glob, pattern, literal)
 - [ ] SSH authentication (gitlab)
 - [ ] Compare local files to upstream

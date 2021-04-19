@@ -72,11 +72,12 @@ pub fn print_app_list(verbose: bool) {
     logger::print_info("Found applications:".to_owned());
     let apps = Apps::new();
     for app in apps.items.iter() {
-        println!("    - {}", app.name);
+        println!("  {} {}", "-".bold().bright_purple(), app.name);
         if verbose {
-            println!("    |_ {}", app.config_path);
+            println!("      {} {}", "Config path =>".bold().bright_cyan(), app.config_path);
+            println!("      {}", "File names:".bold().bright_green());
             for file_name in &app.file_names {
-                println!("    |_ {}", file_name);
+                println!("          {} {}", "=>".bold().bright_green(), file_name);
             }
         }
     }
