@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 extern crate clap;
 extern crate colored;
 
@@ -21,12 +22,11 @@ fn main() {
 
     let matches = args::parse_args();
 
-    if matches.is_present("list") {
-        setman::print_app_list();
-        exit(0);
-    }
-
     match matches.subcommand() {
+        ("list", Some(_sub_m)) => {
+            setman::print_app_list();
+            exit(0);
+        },
         ("install", Some(sub_m)) => {
             let app_name = sub_m.value_of("app").unwrap();
             if app_name.eq("all") {

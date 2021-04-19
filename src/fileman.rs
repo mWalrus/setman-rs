@@ -7,7 +7,7 @@ mod logger;
 mod paths;
 
 use serde::{Deserialize, Serialize};
-use std::{error::Error, path::Path};
+use std::path::Path;
 use std::fs;
 use std::process::exit;
 use paths::Paths;

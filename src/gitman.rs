@@ -10,7 +10,7 @@ mod logger;
 #[path = "paths.rs"]
 mod paths;
 
-use git2::{Cred, CredentialType, Error, IndexAddOption, Oid, PushOptions, Reference, RemoteCallbacks, Repository};
+use git2::{Cred, Error, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
