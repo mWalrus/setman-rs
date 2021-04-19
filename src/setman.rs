@@ -31,8 +31,8 @@ pub fn sync_settings(direction: &str) {
     let mut gitman = GitRepo::new();
     gitman.clone_repo();
     let repo_path = gitman.get_repo_path();
-    match direction {
-        "up" => {
+    match direction.eq("up") {
+        true => {
             let dir_names = fileman::get_dir_names_in_path(&settings_path);
             let mut apps = Apps::new();
             for dir_name in dir_names {
@@ -44,7 +44,7 @@ pub fn sync_settings(direction: &str) {
             }
             gitman.push_changes().unwrap();
         },
-        "down" => {
+        false => {
             let dirs_to_copy = gitman.clone().get_dir_names();
             fileman::copy_files(
                 dirs_to_copy.to_owned(),
@@ -52,7 +52,6 @@ pub fn sync_settings(direction: &str) {
                 &settings_path
             ).unwrap();
         }
-        _ => exit(0),
     }
 }
 
@@ -171,18 +170,12 @@ pub fn remove_application(app_name: &str) {
     apps.remove_app(app_name);
 }
 
-fn exit_on_invalid() {
-    logger::print_warn("Invalid option, exiting.".to_owned());
-    exit(0);
-}
-
 pub fn modify_application(app_name: &str) {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name).unwrap();
     logger::print_job("Modify ".to_owned() + &app_name);
     let mod_options = vec!["Name", "Config path", "File names"];
-    let ans: usize = readline::select(mod_options.clone());
-    match ans {
+    match readline::select(mod_options.clone()) {
         0 => app.name = readline::read("Enter a new name"),
         1 => app.config_path = readline::read("Enter a new config path"),
         2 => {
@@ -196,7 +189,10 @@ pub fn modify_application(app_name: &str) {
             app.file_names = file_names;
 
         },
-        _ => exit_on_invalid(),
+        _ => {
+            logger::print_warn("Invalid option, exiting.".to_owned());
+            exit(0);
+        },
     }
     // make sure user wants to modify the application
     if readline::are_you_sure("modify ".to_owned() + &app_name) {
