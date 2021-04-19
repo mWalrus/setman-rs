@@ -43,7 +43,7 @@ pub fn sync_settings(direction: &str) {
     let dir_names = fileman::get_dir_names_in_path(&settings_path);
     let mut apps = Apps::new();
     for dir_name in dir_names {
-        let app = apps.find_app_by_name(&dir_name);
+        let app = apps.find_app_by_name(&dir_name).unwrap();
         let file_names = app.file_names;
         let source = settings_path.to_string() + "/" + &app.name;
         let dest = repo_path.to_string() + &app.name;
@@ -98,7 +98,7 @@ fn app_copy_action(app: &App, from_local: bool) {
 pub fn save_application(app_name: &str) {
     logger::print_job("Saving application ".to_owned() + &app_name + " to local collection");
     let apps = &mut Apps::new();
-    let app = apps.find_app_by_name(app_name);
+    let app = apps.find_app_by_name(app_name).unwrap();
     app_copy_action(&app, false);
 }
 
@@ -113,7 +113,7 @@ pub fn save_all_applications() {
 pub fn install_application(app_name: &str) {
     logger::print_job("Installing application".to_owned() + &app_name);
     let apps = &mut Apps::new();
-    let app = apps.find_app_by_name(app_name);
+    let app = apps.find_app_by_name(app_name).unwrap();
     app_copy_action(&app, true);
 }
 
@@ -139,7 +139,7 @@ pub fn uninstall_application(app_name: &str) {
     let mut apps = uninstall_pre(
         "uninstall ".to_owned() + &app_name,
         "Uninstalling ".to_owned() + &app_name);
-    let app = apps.find_app_by_name(&app_name);
+    let app = apps.find_app_by_name(&app_name).unwrap();
     fileman::remove_files(&Paths::new().get_app_path(&app.name));
 }
 
@@ -169,7 +169,7 @@ fn exit_on_invalid() {
 
 pub fn modify_application(app_name: &str) {
     let mut apps = Apps::new();
-    let mut app = apps.find_app_by_name(&app_name);
+    let mut app = apps.find_app_by_name(&app_name).unwrap();
     logger::print_job("Modify ".to_owned() + &app_name);
     let mod_options = vec!["Name", "Config path", "File names"];
     let ans: usize = readline::select(mod_options.clone());

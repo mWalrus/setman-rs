@@ -87,7 +87,7 @@ impl GitRepo {
                 //}
 
                 // get previous commit
-                let obj = match repo.revparse_single("main") {
+                let obj = match repo.revparse_single("HEAD") {
                     Ok(obj) => obj,
                     Err(e) => {
                         eprintln!("Error: {}", e);
@@ -118,12 +118,13 @@ impl GitRepo {
                 let mut callbacks = RemoteCallbacks::new();
                 callbacks.credentials(|_str, _option, _cred_type| {
                     let password = readline::password("Enter your git password");
-                    println!("Password: {}", password);
+                    //println!("Password: {}", password);
                     Cred::userpass_plaintext(signature.name().unwrap(), &password)
                 });
                 let mut push_opts = PushOptions::new();
                 push_opts.remote_callbacks(callbacks);
                 let mut origin = repo.find_remote("origin")?;
+                logger::print_info(format!("Pushing to remote: {}", origin.name().unwrap()));
                 origin.push(&["refs/remotes/origin/main"], Some(&mut push_opts))?;
                 Ok(())
             },

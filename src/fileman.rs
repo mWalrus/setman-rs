@@ -7,7 +7,7 @@ mod logger;
 mod paths;
 
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::{error::Error, path::Path};
 use std::fs;
 use std::process::exit;
 use paths::Paths;
@@ -46,21 +46,22 @@ impl Apps {
 
         match toml::from_str::<Apps>(&file_content) {
             Ok(toml) => toml,
-            Err(e) => {
-                println!("Failed to parse toml: {}", e);
-                exit(0);
+            Err(_e) => {
+                toml::from_str::<Apps>("items = []").unwrap()
             }
         }
     }
 
-    pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> App {
-        let pos: Option<usize> = self.items.iter().position(|i| i.name == app_name);
-        if pos == None {
-            logger::print_warn("Application with name '".to_owned() + &app_name + "' could not be found");
-            exit(0);
-        }
-        let app = self.items.get(pos.unwrap()).unwrap();
-        app.clone()
+    pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> Option<App> {
+        let pos: usize = match self.items.iter().position(|i| i.name == app_name) {
+            Some(pos) => pos,
+            None => {
+                logger::print_warn("Application with name '".to_owned() + &app_name + "' could not be found");
+                exit(0);
+            }
+        };
+        let app = self.items.get(pos)?;
+        Some(app.clone())
     }
 
     pub fn save_new_app(&mut self, app: App) {

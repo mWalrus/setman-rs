@@ -4,7 +4,7 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 
 pub fn parse_args() -> ArgMatches<'static> {
     App::new("Setman - Application settings manager")
-        .version("0.1")
+        .version("0.5.1")
         .author("mWalrus")
         .about("Manages settings for various applications")
         .arg(Arg::with_name("list")
