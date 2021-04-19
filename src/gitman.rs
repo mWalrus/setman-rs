@@ -10,15 +10,7 @@ mod logger;
 #[path = "paths.rs"]
 mod paths;
 
-use git2::{
-    Cred,
-    Error,
-    IndexAddOption,
-    Oid,
-    PushOptions,
-    RemoteCallbacks,
-    Repository,
-    RepositoryState};
+use git2::{Commit, Cred, Error, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository, RepositoryState, Signature, Tree};
 use uuid::Uuid;
 use std::fs;
 use std::process::exit;
@@ -94,51 +86,17 @@ impl GitRepo {
                 index.add_all(["."].iter(), IndexAddOption::DEFAULT, None)?;
                 index.write()?;
 
-
-
-                // get previous commit
-                let parent_obj = match repo.revparse_single("origin") {
-                    Ok(obj) => obj,
-                    Err(e) => {
-                        eprintln!("Error: {}", e);
-                        exit(0)
-                    },
-                };
-                let parent = parent_obj.as_commit().unwrap();
-
                 // get index tree
                 let tree_id = index.write_tree()?;
                 let tree = repo.find_tree(tree_id)?;
 
-                // Create commit
-                let commit_msg = readline::read("Enter a commit message");
-                let pretty_message = git2::message_prettify(commit_msg, None)?;
-                let new_commit_id: Oid = match repo.commit(
-                    Some("HEAD"),
-                    &signature,
-                    &signature,
-                    &pretty_message,
-                    &tree, &[parent])
-                {
-                    Ok(commit) => commit,
-                    Err(e) => {
-                        println!("Failed to create commit: {}", e);
-                        exit(0);
-                    },
-                };
-                logger::print_info(format!("Created new commit with id: {}", new_commit_id));
+                let parent = &self.get_parent_commit(&repo);
+
+                self.create_commit(&repo, &signature, &tree, parent).unwrap();
+
+                let mut push_opts = self.gen_push_opts(&signature);
 
                 // push to remote origin
-                let mut callbacks = RemoteCallbacks::new();
-                callbacks.credentials(|_str, _option, _cred_type| {
-                    let password = readline::password("Enter your git password");
-                    //println!("Password: {}", password);
-                    Cred::userpass_plaintext(signature.name().unwrap(), &password)
-                });
-
-                let mut push_opts = PushOptions::new();
-                push_opts.remote_callbacks(callbacks);
-
                 let mut origin = repo.find_remote("origin")?;
                 logger::print_job(format!("Pushing to remote: {}", origin.name().unwrap()));
                 origin.push(&["refs/heads/main"], Some(&mut push_opts))?;
@@ -147,6 +105,48 @@ impl GitRepo {
             },
             Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
         }
+    }
+
+    fn create_commit(&self, repo: &Repository, signature: &Signature, tree: &Tree, parent: &Commit) -> Result<(), Error> {
+        let commit_msg = readline::read("Enter a commit message");
+        let pretty_message = git2::message_prettify(commit_msg, None)?;
+        let new_commit_id: Oid = match repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            &pretty_message,
+            &tree, &[parent])
+        {
+            Ok(commit) => commit,
+            Err(e) => {
+                println!("Failed to create commit: {}", e);
+                exit(0);
+            },
+        };
+        logger::print_info(format!("Created new commit with id: {}", new_commit_id));
+        Ok(())
+    }
+
+    fn gen_push_opts<'a>(&self, signature: &'a Signature) -> PushOptions<'a> {
+        let mut callbacks = RemoteCallbacks::new();
+        callbacks.credentials(move |_str, _option, _cred_type| {
+            let password = readline::password("Enter your git password");
+            Cred::userpass_plaintext(signature.name().unwrap(), &password)
+        });
+
+        let mut push_opts = PushOptions::new();
+        push_opts.remote_callbacks(callbacks);
+        push_opts
+    }
+
+    fn get_parent_commit<'a>(&self, repo: &'a Repository) -> Commit<'a> {
+        match repo.revparse_single("origin") {
+            Ok(obj) => obj,
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                exit(0)
+            },
+        }.as_commit().unwrap().to_owned()
     }
 
     pub fn clone_repo(&mut self) {
