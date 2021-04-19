@@ -113,7 +113,7 @@ pub fn save_all_applications() {
 }
 
 pub fn install_application(app_name: &str) {
-    logger::print_job("Installing application".to_owned() + &app_name);
+    logger::print_job("Installing application ".to_owned() + &app_name);
     let apps = &mut Apps::new();
     let app = apps.find_app_by_name(app_name).unwrap();
     app_copy_action(&app, true);
