@@ -68,11 +68,17 @@ pub fn take_new_application() {
     apps.save_new_app(App::new(app_name, app_config_path, files_names));
 }
 
-pub fn print_app_list() {
+pub fn print_app_list(verbose: bool) {
     logger::print_info("Found applications:".to_owned());
     let apps = Apps::new();
     for app in apps.items.iter() {
         println!("    - {}", app.name);
+        if verbose {
+            println!("    |_ {}", app.config_path);
+            for file_name in &app.file_names {
+                println!("    |_ {}", file_name);
+            }
+        }
     }
 }
 

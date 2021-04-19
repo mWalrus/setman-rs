@@ -24,8 +24,12 @@ fn main() {
     let matches = args::parse_args();
 
     match matches.subcommand() {
-        ("list", Some(_sub_m)) => {
-            setman::print_app_list();
+        ("list", Some(sub_m)) => {
+            let verbose = match sub_m.subcommand() {
+                ("verbose", Some(_s)) => true,
+                _ => false,
+            };
+            setman::print_app_list(verbose);
             exit(0);
         },
         ("install", Some(sub_m)) => {
@@ -63,7 +67,7 @@ fn main() {
     }
 }
 
-fn perform_action(sub_command: &ArgMatches, single: Box<dyn Fn(&str)>, multi: Box<dyn FnOnce()>) {
+fn perform_action(sub_command: &ArgMatches, single: Box<dyn FnOnce(&str)>, multi: Box<dyn FnOnce()>) {
     let app_name = sub_command.value_of("app").unwrap();
     if app_name.eq("all") {
         multi();
