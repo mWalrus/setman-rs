@@ -93,7 +93,7 @@ pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
     }
 }
 
-fn app_copy_action(app: &App, from_local: bool) {
+fn copy_app_files(app: &App, from_local: bool) {
     let paths = Paths::new();
     let app_local_path = paths.clone().get_app_path(&app.name);
     let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
@@ -106,42 +106,41 @@ fn app_copy_action(app: &App, from_local: bool) {
     fileman::copy_files(app.clone().file_names, &app_conf_path, &app_local_path).unwrap();
 }
 
-pub fn save_application(app_name: &str) {
-    logger::print_job("Saving application ".to_owned() + &app_name + " to local collection");
+fn app_action(message: String, app_name: &str, from_local: bool) {
+    logger::print_job(message);
     let mut apps = Apps::new();
     let app = apps.find_app_by_name(app_name).unwrap();
-    app_copy_action(&app, false);
+    copy_app_files(&app, from_local);
 }
 
-pub fn save_all_applications(apps_to_skip: Vec<&str>) {
-    logger::print_job("Saving all applications' settings".to_owned());
+fn all_apps_action(message: String, apps_to_skip: Vec<&str>, from_local: bool) {
+    logger::print_job(message);
     let apps = Apps::new();
     for app in apps.items.iter() {
         if !apps_to_skip.contains(&app.name.as_str()) {
-            app_copy_action(app, false);
+            copy_app_files(app, from_local);
         }
     }
+}
+
+pub fn save_application(app_name: &str) {
+    app_action(format!("Saving application {} to local collection", app_name), app_name, false);
 }
 
 pub fn install_application(app_name: &str) {
-    logger::print_job("Installing application ".to_owned() + &app_name);
-    let mut apps = Apps::new();
-    let app = apps.find_app_by_name(app_name).unwrap();
-    app_copy_action(&app, true);
+    app_action(format!("Installing application {}", app_name), app_name, true);
+}
+
+pub fn save_all_applications(apps_to_skip: Vec<&str>) {
+    all_apps_action("Saving all applications' settings".to_owned(), apps_to_skip, false);
 }
 
 pub fn install_all_applications(apps_to_skip: Vec<&str>) {
-    logger::print_job("Installing all applications' settings".to_owned());
-    let apps = Apps::new();
-    for app in apps.items.iter() {
-        if !apps_to_skip.contains(&app.name.as_str()) {
-            app_copy_action(app, true);
-        }
-    }
+    all_apps_action("Installing all applications' settings".to_owned(), apps_to_skip, true);
 }
 
-fn uninstall_pre(ru_sure: String, job_msg: String) -> Apps {
-    let ans = readline::are_you_sure(ru_sure);
+fn uninstall_pre(ru_sure_action: String, job_msg: String) -> Apps {
+    let ans = readline::are_you_sure(ru_sure_action);
     if !ans {
         logger::print_info("Exiting".to_owned());
         exit(0);
@@ -174,7 +173,7 @@ pub fn uninstall_all_applications(apps_to_skip: Vec<&str>) {
 
 pub fn remove_application(app_name: &str) {
     logger::print_warn("Removing ".to_owned() + &app_name);
-    readline::are_you_sure("Remove ".to_string() + app_name);
+    readline::are_you_sure("remove ".to_string() + app_name);
     let mut apps = Apps::new();
     apps.remove_app(app_name);
 }
