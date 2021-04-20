@@ -76,10 +76,7 @@ fn main() {
 }
 
 fn perform_action(sub_command: &ArgMatches, single: Box<dyn FnOnce(&str)>, multi: Box<dyn FnOnce()>) {
-    let app_name = sub_command.value_of("app").unwrap();
-    if app_name.eq("all") {
-        multi();
-        exit(0);
-    }
-    single(&app_name);
+    //let app_name = sub_command.value_of("app").unwrap();
+    println!("subcommand: {:#?}", sub_command);
+    //single(&app_name);
 }
