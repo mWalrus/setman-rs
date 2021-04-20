@@ -90,9 +90,8 @@ impl GitRepo {
                 let tree_id = index.write_tree()?;
                 let tree = repo.find_tree(tree_id)?;
 
-                let parent = &self.get_parent_commit(&repo);
-
-                self.create_commit(&repo, &signature, &tree, parent).unwrap();
+                let parent = self.get_parent_commit(&repo);
+                self.create_commit(&repo, &signature, &tree, &parent).unwrap();
 
                 let mut push_opts = self.gen_push_opts(&signature);
 

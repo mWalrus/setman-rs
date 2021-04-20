@@ -104,7 +104,7 @@ pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> std::io:
     dir_exists(source);
     dir_exists(dest);
     for file in file_names {
-        logger::print_info(format!("Copying {} @ {} => {}", &file, &source, &dest));
+        logger::print_info(format!("Copying {} to {}", &file, &dest));
         let source_path = format!("{}/{}",source.to_string(), &file);
         let dest_path = format!("{}/{}", dest.to_string(), &file);
         // check if source file exists before attempting copy

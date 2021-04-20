@@ -96,6 +96,7 @@ fn app_copy_action(app: &App, from_local: bool) {
     let paths = Paths::new();
     let app_local_path = paths.clone().get_app_path(&app.name);
     let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
+    logger::print_job("Found application:".to_string());
     print_app(app.to_owned(), true);
     if from_local {
         fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
