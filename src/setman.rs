@@ -67,18 +67,28 @@ pub fn take_new_application() {
     apps.save_new_app(App::new(app_name, app_config_path, files_names));
 }
 
-pub fn print_app_list(verbose: bool) {
-    logger::print_info("Applications:".to_string());
-    let apps = Apps::new();
-    for app in apps.items {
-        println!("  {} {}", "-".bold().bright_purple(), app.name.bold());
-        if verbose {
-            println!("      {} {}", "Config path =>".bold().bright_cyan(), app.config_path);
-            println!("      {}", "File names:".bold().bright_green());
-            for file in app.file_names {
-                println!("          {} {}", "=>".bold().bright_green(), file);
-            }
+fn print_app(app: App, verbose: bool) {
+    println!("  {} {}", "-".bold().bright_purple(), app.name.bold());
+    if verbose {
+        println!("      {} {}", "Config path =>".bold().bright_cyan(), app.config_path);
+        println!("      {}", "File names:".bold().bright_green());
+        for file in app.file_names {
+            println!("          {} {}", "=>".bold().bright_green(), file);
         }
+    }
+}
+
+pub fn print_app_list(app_name: Option<&str>, verbose: bool) {
+    logger::print_info("Applications:".to_string());
+    let mut apps = Apps::new();
+    if app_name != None {
+        let name = app_name.unwrap();
+        let app = apps.find_app_by_name(&name).unwrap();
+        print_app(app, verbose);
+        return
+    }
+    for app in apps.items {
+        print_app(app, verbose);
     }
 }
 

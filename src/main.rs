@@ -29,7 +29,11 @@ fn main() {
                 ("verbose", Some(_s)) => true,
                 _ => false,
             };
-            setman::print_app_list(verbose);
+            let app_name = match sub_m.is_present("app") {
+                true => sub_m.value_of("app"),
+                false => None,
+            };
+            setman::print_app_list(app_name, verbose);
         },
         ("install", Some(sub_m)) => {
             perform_action(
