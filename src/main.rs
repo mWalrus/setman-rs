@@ -75,8 +75,24 @@ fn main() {
     }
 }
 
-fn perform_action(sub_command: &ArgMatches, single: Box<dyn FnOnce(&str)>, multi: Box<dyn FnOnce()>) {
-    //let app_name = sub_command.value_of("app").unwrap();
-    println!("subcommand: {:#?}", sub_command);
-    //single(&app_name);
+fn perform_action(sub_command: &ArgMatches, single: Box<dyn FnOnce(&str)>, multi: Box<dyn FnOnce(Vec<&str>)>) {
+    match sub_command.subcommand() {
+        ("app", Some(cmd)) => {
+            if cmd.is_present("application") {
+                let app_name = cmd.value_of("application").unwrap();
+                single(app_name);
+            }
+        },
+        ("all", Some(cmd)) => {
+            println!("All apps");
+            match cmd.values_of("skip") {
+                Some(app_names) => {
+                    let results: Vec<&str> = app_names.into_iter().map(|name| name).collect();
+                    multi(results);
+                },
+                None => multi(Vec::<&str>::new()),
+            }
+        },
+        _ => exit(0),
+    }
 }

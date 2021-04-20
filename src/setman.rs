@@ -113,11 +113,13 @@ pub fn save_application(app_name: &str) {
     app_copy_action(&app, false);
 }
 
-pub fn save_all_applications() {
+pub fn save_all_applications(apps_to_skip: Vec<&str>) {
     logger::print_job("Saving all applications' settings".to_owned());
     let apps = Apps::new();
     for app in apps.items.iter() {
-        app_copy_action(app, false);
+        if !apps_to_skip.contains(&app.name.as_str()) {
+            app_copy_action(app, false);
+        }
     }
 }
 
@@ -128,11 +130,13 @@ pub fn install_application(app_name: &str) {
     app_copy_action(&app, true);
 }
 
-pub fn install_all_applications() {
+pub fn install_all_applications(apps_to_skip: Vec<&str>) {
     logger::print_job("Installing all applications' settings".to_owned());
     let apps = Apps::new();
     for app in apps.items.iter() {
-        app_copy_action(app, true);
+        if !apps_to_skip.contains(&app.name.as_str()) {
+            app_copy_action(app, true);
+        }
     }
 }
 
@@ -154,15 +158,17 @@ pub fn uninstall_application(app_name: &str) {
     fileman::remove_files(&Paths::new().get_app_path(&app.name));
 }
 
-pub fn uninstall_all_applications() {
+pub fn uninstall_all_applications(apps_to_skip: Vec<&str>) {
     let apps = uninstall_pre(
         "uninstall all applications' settings".to_owned(),
         "Uninstalling all applications".to_owned());
     let paths = Paths::new();
     for app in apps.items.iter() {
-        let conf_path = paths.clone().get_app_path(&app.name);
-        print_app(app.to_owned(), true);
-        fileman::remove_files(&conf_path);
+        if !apps_to_skip.contains(&app.name.as_str()) {
+            let conf_path = paths.clone().get_app_path(&app.name);
+            print_app(app.to_owned(), true);
+            fileman::remove_files(&conf_path);
+        }
     }
 }
 
