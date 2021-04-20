@@ -32,7 +32,7 @@ fn main() {
             let app_names = match sub_m.is_present("app") {
                 true => {
                     let values = sub_m.values_of("app").unwrap();
-                    let mut result: Vec<&str> = values.into_iter().map(|value| value).collect();
+                    let result: Vec<&str> = values.into_iter().map(|value| value).collect();
                     Some(result)
                 },
                 false => None,
