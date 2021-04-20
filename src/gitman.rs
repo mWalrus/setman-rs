@@ -73,11 +73,6 @@ impl GitRepo {
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
                 logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
-                // if no changes have been made we skip pushing to upstream
-                if repo.state() == RepositoryState::Clean {
-                    logger::print_info(format!("Worktree for repo {} is clean, skipping push", &self.repo_path));
-                    exit(0);
-                }
 
                 let signature = repo.signature()?;
                 let mut index = repo.index().expect("Failed to get repo index");
