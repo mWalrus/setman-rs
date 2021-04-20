@@ -1,4 +1,3 @@
-extern crate colored;
 extern crate toml;
 extern crate serde;
 extern crate home;
@@ -17,7 +16,6 @@ mod paths;
 use std::process::exit;
 use fileman::{Apps, App};
 use gitman::GitRepo;
-use colored::*;
 use paths::Paths;
 
 pub fn check_path_existance() {
@@ -67,29 +65,18 @@ pub fn take_new_application() {
     apps.save_new_app(App::new(app_name, app_config_path, files_names));
 }
 
-fn print_app(app: App, verbose: bool) {
-    println!("  {} {}", "-".bold().bright_purple(), app.name.bold());
-    if verbose {
-        println!("      {} {}", "Config path =>".bold().bright_cyan(), app.config_path);
-        println!("      {}", "File names:".bold().bright_green());
-        for file in app.file_names {
-            println!("          {} {}", "=>".bold().bright_green(), file);
-        }
-    }
-}
-
 pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
     logger::print_info("Applications:".to_string());
     let mut apps = Apps::new();
     if app_names != None {
         for name in app_names.unwrap() {
             let app = apps.find_app_by_name(&name).unwrap();
-            print_app(app, verbose);
+            logger::print_app(app.name, app.config_path, app.file_names, verbose);
         }
         return
     }
     for app in apps.items {
-        print_app(app, verbose);
+        logger::print_app(app.name, app.config_path, app.file_names, verbose);
     }
 }
 
@@ -98,7 +85,8 @@ fn copy_app_files(app: &App, from_local: bool) {
     let app_local_path = paths.clone().get_app_path(&app.name);
     let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
     logger::print_job("Found application:".to_string());
-    print_app(app.to_owned(), true);
+    let tmp_app = app.clone();
+    logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, true);
     if from_local {
         fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
         return
@@ -165,7 +153,8 @@ pub fn uninstall_all_applications(apps_to_skip: Vec<&str>) {
     for app in apps.items.iter() {
         if !apps_to_skip.contains(&app.name.as_str()) {
             let conf_path = paths.clone().get_app_path(&app.name);
-            print_app(app.to_owned(), true);
+            let tmp_app = app.clone();
+            logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, true);
             fileman::remove_files(&conf_path);
         }
     }
