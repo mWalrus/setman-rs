@@ -92,20 +92,11 @@ pub fn print_app_list(app_name: Option<&str>, verbose: bool) {
     }
 }
 
-// Prints general information about an app
-fn print_app_info(conf_path: &str, file_names: Vec<String>) {
-    logger::print_info("Found app config path: ".to_owned() + conf_path);
-    logger::print_info("Found files to handle:".to_owned());
-    for name in file_names.iter() {
-        println!("    {} {}", "=>".bold(), name);
-    }
-}
-
 fn app_copy_action(app: &App, from_local: bool) {
     let paths = Paths::new();
     let app_local_path = paths.clone().get_app_path(&app.name);
     let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
-    print_app_info(&app_conf_path, app.clone().file_names);
+    print_app(app.to_owned(), true);
     if from_local {
         fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
         return
@@ -115,7 +106,7 @@ fn app_copy_action(app: &App, from_local: bool) {
 
 pub fn save_application(app_name: &str) {
     logger::print_job("Saving application ".to_owned() + &app_name + " to local collection");
-    let apps = &mut Apps::new();
+    let mut apps = Apps::new();
     let app = apps.find_app_by_name(app_name).unwrap();
     app_copy_action(&app, false);
 }
@@ -130,7 +121,7 @@ pub fn save_all_applications() {
 
 pub fn install_application(app_name: &str) {
     logger::print_job("Installing application ".to_owned() + &app_name);
-    let apps = &mut Apps::new();
+    let mut apps = Apps::new();
     let app = apps.find_app_by_name(app_name).unwrap();
     app_copy_action(&app, true);
 }
@@ -168,7 +159,7 @@ pub fn uninstall_all_applications() {
     let paths = Paths::new();
     for app in apps.items.iter() {
         let conf_path = paths.clone().get_app_path(&app.name);
-        print_app_info(&conf_path, app.clone().file_names);
+        print_app(app.to_owned(), true);
         fileman::remove_files(&conf_path);
     }
 }
