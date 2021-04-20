@@ -86,7 +86,7 @@ fn copy_app_files(app: &App, from_local: bool) {
     let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
     logger::print_job("Found application:".to_string());
     let tmp_app = app.clone();
-    logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, true);
+    logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, false);
     if from_local {
         fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
         return
