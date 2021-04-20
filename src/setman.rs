@@ -78,13 +78,14 @@ fn print_app(app: App, verbose: bool) {
     }
 }
 
-pub fn print_app_list(app_name: Option<&str>, verbose: bool) {
+pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
     logger::print_info("Applications:".to_string());
     let mut apps = Apps::new();
-    if app_name != None {
-        let name = app_name.unwrap();
-        let app = apps.find_app_by_name(&name).unwrap();
-        print_app(app, verbose);
+    if app_names != None {
+        for name in app_names.unwrap() {
+            let app = apps.find_app_by_name(&name).unwrap();
+            print_app(app, verbose);
+        }
         return
     }
     for app in apps.items {

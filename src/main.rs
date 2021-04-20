@@ -29,11 +29,16 @@ fn main() {
                 ("verbose", Some(_s)) => true,
                 _ => false,
             };
-            let app_name = match sub_m.is_present("app") {
-                true => sub_m.value_of("app"),
+            let app_names = match sub_m.is_present("app") {
+                true => {
+                    let values = sub_m.values_of("app").unwrap();
+                    let mut result: Vec<&str> = values.into_iter().map(|value| value).collect();
+                    Some(result)
+                },
                 false => None,
             };
-            setman::print_app_list(app_name, verbose);
+
+            setman::print_app_list(app_names, verbose);
         },
         ("install", Some(sub_m)) => {
             perform_action(
