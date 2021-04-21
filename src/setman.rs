@@ -1,19 +1,10 @@
-extern crate toml;
-extern crate serde;
-extern crate home;
+use crate::fileman;
+use crate::gitman;
+use crate::paths;
+use crate::logger;
+use crate::readline;
 
-#[path = "logger.rs"]
-mod logger;
-#[path = "fileman.rs"]
-mod fileman;
-#[path = "readline.rs"]
-mod readline;
-#[path = "gitman.rs"]
-mod gitman;
-#[path = "paths.rs"]
-mod paths;
-
-use std::process::exit;
+use std::{io::Error, process::exit};
 use fileman::{Apps, App};
 use gitman::GitRepo;
 use paths::Paths;
@@ -31,7 +22,7 @@ pub fn sync_settings(direction: &str) {
     let repo_path = gitman.get_repo_path();
     match direction.eq("up") {
         true => {
-            let dir_names = fileman::get_dir_names_in_path(&settings_path);
+            let dir_names = fileman::get_dir_names_in_path(&settings_path).unwrap();
             let mut apps = Apps::new();
             for dir_name in dir_names {
                 let app = apps.find_app_by_name(&dir_name).unwrap();
@@ -56,12 +47,11 @@ pub fn sync_settings(direction: &str) {
 
 pub fn take_new_application() {
     logger::print_new_app_header();
-    let app_name = readline::read("Enter Application name");
-    let app_config_path = readline::read("Config path (relative to home)");
-    let config_files = readline::read("File names to save (space separated)");
+    let app_name = readline::read("Enter Application name").unwrap();
+    let app_config_path = readline::read("Config path (relative to home)").unwrap();
+    let config_files = readline::read("File names to save (space separated)").unwrap();
 
-    let files_names = config_files.split_whitespace()
-        .map(|f| f.to_string()).collect();
+    let files_names = config_files.split_whitespace().map(String::from).collect();
     let mut apps = Apps::new();
     apps.save_new_app(App::new(app_name, app_config_path, files_names));
 }
@@ -129,7 +119,7 @@ pub fn install_all_applications(apps_to_skip: Vec<&str>) {
 }
 
 fn uninstall_pre(ru_sure_action: String, job_msg: String) -> Apps {
-    let ans = readline::are_you_sure(ru_sure_action);
+    let ans = readline::are_you_sure(ru_sure_action).unwrap();
     if !ans {
         logger::print_info("Exiting".to_owned());
         exit(0);
@@ -143,7 +133,7 @@ pub fn uninstall_application(app_name: &str) {
         "uninstall ".to_owned() + &app_name,
         "Uninstalling ".to_owned() + &app_name);
     let app = apps.find_app_by_name(&app_name).unwrap();
-    fileman::remove_files(&Paths::new().get_app_path(&app.name));
+    fileman::remove_files(&Paths::new().get_app_path(&app.name)).unwrap();
 }
 
 pub fn uninstall_all_applications(apps_to_skip: Vec<&str>) {
@@ -156,32 +146,32 @@ pub fn uninstall_all_applications(apps_to_skip: Vec<&str>) {
             let conf_path = paths.clone().get_app_path(&app.name);
             let tmp_app = app.clone();
             logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, true);
-            fileman::remove_files(&conf_path);
+            fileman::remove_files(&conf_path).unwrap();
         }
     }
 }
 
 pub fn remove_application(app_name: &str) {
     logger::print_warn("Removing ".to_owned() + &app_name);
-    readline::are_you_sure("remove ".to_string() + app_name);
+    readline::are_you_sure("remove ".to_string() + app_name).unwrap();
     let mut apps = Apps::new();
     apps.remove_app(app_name);
 }
 
-pub fn modify_application(app_name: &str) {
+pub fn modify_application(app_name: &str) -> Result<(), Error>{
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name).unwrap();
     logger::print_job("Modify ".to_owned() + &app_name);
     let mod_options = vec!["Name", "Config path", "File names"];
-    match readline::select(mod_options.clone()) {
-        0 => app.name = readline::read("Enter a new name"),
-        1 => app.config_path = readline::read("Enter a new config path"),
+    match readline::select(mod_options.clone())? {
+        0 => app.name = readline::read("Enter a new name")?,
+        1 => app.config_path = readline::read("Enter a new config path")?,
         2 => {
             let mut file_names = app.file_names;
-            let file_names_str = file_names.iter().map(|name| name.as_str()).collect();
-            let file_index: usize = readline::select(file_names_str);
+            let file_names_str = file_names.iter().map(|n| n.as_str()).collect();
+            let file_index: usize = readline::select(file_names_str)?;
 
-            let new_file_name = readline::read("Enter a new file name");
+            let new_file_name = readline::read("Enter a new file name")?;
             file_names.remove(file_index);
             file_names.insert(file_index, new_file_name);
             app.file_names = file_names;
@@ -193,8 +183,9 @@ pub fn modify_application(app_name: &str) {
         },
     }
     // make sure user wants to modify the application
-    if readline::are_you_sure("modify ".to_owned() + &app_name) {
+    if readline::are_you_sure("modify ".to_owned() + &app_name)? {
         apps.remove_app(app_name);
         apps.save_new_app(app);
-    }
+    };
+    Ok(())
 }

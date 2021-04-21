@@ -12,7 +12,6 @@ home = "0.5.3"
 colored = "2"
 toml = "0.5.3"
 serde = {version = "1.0.125", features = ["derive"]}
-rustyline = "8.0.0"
 git2 = "0.13.17"
 uuid = {version = "0.4", features = ["v4"]}
 dialoguer = "0.8.0"

@@ -1,8 +1,18 @@
-#![allow(dead_code)]
 extern crate clap;
 extern crate colored;
+extern crate home;
+extern crate toml;
+extern crate serde;
+extern crate git2;
+extern crate uuid;
+extern crate dialoguer;
 
 mod args;
+mod fileman;
+mod gitman;
+mod logger;
+mod paths;
+mod readline;
 mod setman;
 
 use clap::ArgMatches;
@@ -21,9 +31,7 @@ fn main() {
 ########  ##########     ###   ###       ### ###     ### ###    ####       ".bold().blue(), "Application settings manager".bright_cyan().bold());
     setman::check_path_existance();
 
-    let matches = args::parse_args();
-
-    match matches.subcommand() {
+    match args::parse_args().subcommand() {
         ("list", Some(sub_m)) => {
             let verbose = match sub_m.subcommand() {
                 ("verbose", Some(_s)) => true,
@@ -32,8 +40,7 @@ fn main() {
             let app_names = match sub_m.is_present("app") {
                 true => {
                     let values = sub_m.values_of("app").unwrap();
-                    let result: Vec<&str> = values.into_iter().map(|value| value).collect();
-                    Some(result)
+                    Some(values.collect::<Vec<&str>>())
                 },
                 false => None,
             };
@@ -60,7 +67,7 @@ fn main() {
         },
         ("modify", Some(sub_m)) =>  {
             let app_name = sub_m.value_of("app").unwrap();
-            setman::modify_application(app_name)
+            setman::modify_application(app_name).unwrap()
         },
         ("remove", Some(sub_m)) =>  {
             let app_name = sub_m.value_of("app").unwrap();
@@ -79,17 +86,12 @@ fn perform_action(sub_command: &ArgMatches, single: Box<dyn FnOnce(&str)>, multi
     match sub_command.subcommand() {
         ("app", Some(cmd)) => {
             if cmd.is_present("application") {
-                let app_name = cmd.value_of("application").unwrap();
-                single(app_name);
+                single(cmd.value_of("application").unwrap());
             }
         },
         ("all", Some(cmd)) => {
-            println!("All apps");
             match cmd.values_of("skip") {
-                Some(app_names) => {
-                    let results: Vec<&str> = app_names.into_iter().map(|name| name).collect();
-                    multi(results);
-                },
+                Some(app_names) => multi(app_names.collect::<Vec<&str>>()),
                 None => multi(Vec::<&str>::new()),
             }
         },

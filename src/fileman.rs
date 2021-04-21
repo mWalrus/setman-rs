@@ -1,13 +1,8 @@
-extern crate toml;
-extern crate serde;
-
-#[path = "logger.rs"]
-mod logger;
-#[path = "paths.rs"]
-mod paths;
+use crate::logger;
+use crate::paths;
 
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::{io::Result, path::Path};
 use std::fs;
 use std::process::exit;
 use paths::Paths;
@@ -56,12 +51,11 @@ impl Apps {
         let pos: usize = match self.items.iter().position(|i| i.name == app_name) {
             Some(pos) => pos,
             None => {
-                logger::print_warn("Application with name '".to_owned() + &app_name + "' could not be found");
+                logger::print_warn(format!("Application with name '{}' could not be found", &app_name));
                 exit(0);
             }
         };
-        let app = self.items.get(pos)?;
-        Some(app.clone())
+        Some(self.items.get(pos)?.clone())
     }
 
     pub fn save_new_app(&mut self, app: App) {
@@ -70,7 +64,7 @@ impl Apps {
     }
 
     pub fn remove_app(&mut self, app_name: &str) {
-        self.items = self.items.clone().into_iter().filter(|a| a.name.ne(app_name)).collect();
+        self.items.retain(|a| a.name.ne(app_name));
         self.write_toml();
     }
 
@@ -88,19 +82,19 @@ pub fn dir_exists(path: &str) {
     };
 }
 
-pub fn get_dir_names_in_path(dir_path: &str) -> Vec<String> {
-    let read = Path::new(dir_path).read_dir().unwrap();
+pub fn get_dir_names_in_path(dir_path: &str) -> Result<Vec<String>> {
+    let read = Path::new(dir_path).read_dir()?;
     let mut result: Vec<String> = Vec::new();
-    for entry in read {
-        let tmp = entry.unwrap();
-        if tmp.path().is_dir() {
-            result.push(tmp.file_name().to_str().unwrap().to_string());
+    for e in read {
+        let entry = e?;
+        if entry.path().is_dir() {
+            result.push(entry.file_name().to_str().unwrap().to_string());
         }
     }
-    result
+    Ok(result)
 }
 
-pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> std::io::Result<()> {
+pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> Result<()> {
     dir_exists(source);
     dir_exists(dest);
     for file in file_names {
@@ -114,11 +108,12 @@ pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> std::io:
     Ok(())
 }
 
-pub fn remove_files(conf_path: &str) {
-    let files = fs::read_dir(conf_path).unwrap();
+pub fn remove_files(conf_path: &str) -> Result<()>{
+    let files = fs::read_dir(conf_path)?;
     for file in files {
-        let file_path = file.unwrap().path();
+        let file_path = file?.path();
         logger::print_warn("Removing file ".to_owned() + &file_path.display().to_string());
-        fs::remove_file(&file_path).unwrap();
+        fs::remove_file(&file_path)?;
     }
+    Ok(())
 }

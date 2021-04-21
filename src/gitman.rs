@@ -1,14 +1,6 @@
-extern crate git2;
-extern crate uuid;
-extern crate toml;
-extern crate serde;
-
-#[path = "readline.rs"]
-mod readline;
-#[path = "logger.rs"]
-mod logger;
-#[path = "paths.rs"]
-mod paths;
+use crate::readline;
+use crate::logger;
+use crate::paths;
 
 use git2::{Commit, Cred, Error, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository, Signature, Tree};
 use uuid::Uuid;
@@ -28,6 +20,7 @@ pub struct GitRepo {
 impl GitRepo {
     pub fn new() -> GitRepo {
         let git_config_path = Paths::new().git_config_path;
+
         let file_content = match fs::read_to_string(&git_config_path) {
             Ok(content) => content,
             Err(_e) => {
@@ -35,6 +28,7 @@ impl GitRepo {
                 exit(0);
             }
         };
+
         // maybe add test repo for dev purpose
         let upstream_url: String = match toml::from_str::<Value>(&file_content) {
             Ok(value) => value["upstream_url"].as_str().unwrap().to_string(),
@@ -43,7 +37,9 @@ impl GitRepo {
                 exit(0);
             }
         };
+
         let repo_name = "setman-tmp-".to_string() + &Uuid::new_v4().to_string();
+
         GitRepo {
             upstream_url,
             repo_path: "/tmp/".to_string() + &repo_name,
@@ -52,7 +48,9 @@ impl GitRepo {
 
     pub fn get_dir_names(self) -> Vec<String> {
         let directories = fs::read_dir(&self.repo_path).unwrap();
+
         let mut dirs_names: Vec<String> = Vec::new();
+
         for dir in directories {
             let tmp = dir.unwrap();
             // filter the entries to remove files and .git dir
@@ -62,6 +60,7 @@ impl GitRepo {
                 dirs_names.push(dir_path);
             }
         }
+
         dirs_names
     }
 
@@ -76,6 +75,7 @@ impl GitRepo {
 
                 let signature = repo.signature()?;
                 let mut index = repo.index().expect("Failed to get repo index");
+
                 // git add .
                 logger::print_job("Staging files for commit".to_string());
                 index.add_all(["."].iter(), IndexAddOption::DEFAULT, None)?;
@@ -102,7 +102,7 @@ impl GitRepo {
     }
 
     fn create_commit(&self, repo: &Repository, signature: &Signature, tree: &Tree, parent: &Commit) -> Result<(), Error> {
-        let commit_msg = readline::read("Enter a commit message");
+        let commit_msg = readline::read("Enter a commit message").unwrap();
         let pretty_message = git2::message_prettify(commit_msg, None)?;
         let new_commit_id: Oid = match repo.commit(
             Some("HEAD"),
@@ -124,7 +124,7 @@ impl GitRepo {
     fn gen_push_opts<'a>(&self, signature: &'a Signature) -> PushOptions<'a> {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
-            let password = readline::password("Enter your git password");
+            let password = readline::password("Enter your git password").unwrap();
             Cred::userpass_plaintext(signature.name().unwrap(), &password)
         });
 

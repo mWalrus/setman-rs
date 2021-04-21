@@ -1,6 +1,3 @@
-extern crate home;
-extern crate serde;
-
 use home::home_dir;
 
 #[derive(Debug, Clone)]

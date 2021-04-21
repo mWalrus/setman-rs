@@ -1,10 +1,8 @@
-extern crate clap;
-
 use clap::{App, Arg, ArgMatches, SubCommand};
 
 pub fn parse_args() -> ArgMatches<'static> {
     App::new("Setman - Application settings manager")
-        .version("1.1.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .author("mWalrus")
         .about("Manages settings for various applications")
         .subcommand(SubCommand::with_name("list")
