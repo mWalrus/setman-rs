@@ -35,6 +35,7 @@ pub fn sync_settings(direction: &str) {
             let mut apps = Apps::new();
             for dir_name in dir_names {
                 let app = apps.find_app_by_name(&dir_name).unwrap();
+                logger::print_job(format!("Copying files for {}", &dir_name));
                 let file_names = app.file_names;
                 let source = settings_path.to_string() + "/" + &app.name;
                 let dest = repo_path.to_string() + &app.name;
