@@ -1,10 +1,10 @@
 use clap::{App, Arg, ArgMatches, SubCommand};
 
 pub fn parse_args() -> ArgMatches<'static> {
-    App::new("Setman - Application settings manager")
+    App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
-        .author("mWalrus")
-        .about("Manages settings for various applications")
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .about(env!("CARGO_PKG_DESCRIPTION"))
         .subcommand(SubCommand::with_name("list")
             .about("Lists all applications")
             .arg(Arg::with_name("app")
