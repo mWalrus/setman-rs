@@ -11,8 +11,8 @@ use paths::Paths;
 
 pub fn check_path_existance() {
     let paths = Paths::new();
-    fileman::dir_exists(&paths.user_conf_path);
-    fileman::dir_exists(&paths.settings_path);
+    fileman::path_exists(&paths.user_conf_path);
+    fileman::path_exists(&paths.settings_path);
 }
 
 pub fn sync_settings(direction: &str) {
@@ -119,8 +119,7 @@ pub fn install_all_applications(apps_to_skip: Vec<&str>) {
 }
 
 fn uninstall_pre(ru_sure_action: String, job_msg: String) -> Apps {
-    let ans = readline::are_you_sure(ru_sure_action).unwrap();
-    if !ans {
+    if !readline::are_you_sure(ru_sure_action).unwrap() {
         logger::print_info("Exiting".to_owned());
         exit(0);
     }
