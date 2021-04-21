@@ -59,6 +59,12 @@ impl Apps {
     }
 
     pub fn save_new_app(&mut self, app: App) {
+        for app_item in self.items.clone() {
+            if app_item.name.eq(&app.name) {
+                logger::print_warn("An app with that name already exists".to_string());
+                return
+            }
+        }
         self.items.push(app);
         self.write_toml();
     }
@@ -74,7 +80,7 @@ impl Apps {
     }
 }
 
-pub fn dir_exists(path: &str) {
+pub fn path_exists(path: &str) {
     if !Path::new(path).exists() {
         logger::print_warn("Couldn't find ".to_owned() + path);
         logger::print_info("Creating ".to_owned() + path);
@@ -95,8 +101,8 @@ pub fn get_dir_names_in_path(dir_path: &str) -> Result<Vec<String>> {
 }
 
 pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> Result<()> {
-    dir_exists(source);
-    dir_exists(dest);
+    path_exists(source);
+    path_exists(dest);
     for file in file_names {
         logger::print_info(format!("Copying {} to {}", &file, &dest));
         let source_path = format!("{}/{}",source.to_string(), &file);
