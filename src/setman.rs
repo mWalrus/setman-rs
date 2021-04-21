@@ -157,7 +157,7 @@ pub fn remove_application(app_name: &str) {
     apps.remove_app(app_name);
 }
 
-pub fn modify_application(app_name: &str) -> Result<(), Error>{
+pub fn modify_application(app_name: &str) -> Result<(), Error> {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name).unwrap();
     logger::print_job("Modify ".to_owned() + &app_name);
