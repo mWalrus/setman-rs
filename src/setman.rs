@@ -8,6 +8,7 @@ use std::{io::Error, process::exit};
 use fileman::{Apps, App};
 use gitman::GitRepo;
 use paths::Paths;
+use std::path::Path;
 
 pub fn check_path_existance() {
     let paths = Paths::new();
@@ -36,11 +37,21 @@ pub fn sync_settings(direction: &str) {
         },
         false => {
             let dirs_to_copy = gitman.clone().get_dir_names();
-            fileman::copy_files(
-                dirs_to_copy.to_owned(),
-                repo_path,
-                &settings_path
-            ).unwrap();
+            for dir in dirs_to_copy.clone() {
+                let source = format!("{}{}", &repo_path, &dir);
+                let dest = format!("{}/{}", &settings_path, &dir);
+                let files = Path::new(&source).read_dir().unwrap();
+                let file_names = files
+                    .into_iter()
+                    .map(|n| n
+                        .unwrap()
+                        .file_name()
+                        .to_str()
+                        .unwrap()
+                        .to_string()
+                    ).collect();
+                fileman::copy_files(file_names, &source, &dest).unwrap();
+            }
         }
     }
 }

@@ -42,7 +42,7 @@ impl GitRepo {
 
         GitRepo {
             upstream_url,
-            repo_path: "/tmp/".to_string() + &repo_name,
+            repo_path: format!("/tmp/{}", &repo_name),
         }
     }
 
@@ -55,7 +55,7 @@ impl GitRepo {
             let tmp = dir.unwrap();
             // filter the entries to remove files and .git dir
             if tmp.path().is_dir() && tmp.file_name().ne(".git") {
-                let dir_path = tmp.path().to_str().unwrap().to_string();
+                let dir_path = tmp.file_name().to_str().unwrap().to_string();
                 logger::print_info(format!("Found directory: {}", dir_path));
                 dirs_names.push(dir_path);
             }
