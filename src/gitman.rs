@@ -4,10 +4,9 @@ use crate::paths;
 
 use git2::{Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository, Signature, Tree, build::RepoBuilder};
 use uuid::Uuid;
-use std::{borrow::Borrow, fs, path::Path};
+use std::{fs, path::Path};
 use std::process::exit;
 use serde::Deserialize;
-use toml::Value;
 use paths::Paths;
 
 #[derive(Deserialize, Clone)]
@@ -57,6 +56,7 @@ impl GitRepo {
     }
 
     pub fn get_dir_names(self) -> Vec<String> {
+        logger::print_job("Getting directories from git repo".to_string());
         let directories = fs::read_dir(&self.repo_path).unwrap();
 
         let mut dirs_names: Vec<String> = Vec::new();
@@ -70,7 +70,6 @@ impl GitRepo {
                 dirs_names.push(dir_path);
             }
         }
-
         dirs_names
     }
 

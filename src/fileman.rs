@@ -1,11 +1,13 @@
 use crate::logger;
 use crate::paths;
+use crate::colored;
 
 use serde::{Deserialize, Serialize};
 use std::{io::Result, path::Path};
 use std::fs;
 use std::process::exit;
 use paths::Paths;
+use colored::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Apps {
@@ -100,15 +102,16 @@ pub fn get_dir_names_in_path(dir_path: &str) -> Result<Vec<String>> {
 }
 
 pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> Result<()> {
+    logger::print_job(format!("Copying files from {}", source));
     path_exists(source);
     path_exists(dest);
     for file in file_names {
-        logger::print_info(format!("Copying {} to {}", &file, &dest));
         let source_path = format!("{}/{}",source.to_string(), &file);
         let dest_path = format!("{}/{}", dest.to_string(), &file);
         // check if source file exists before attempting copy
         assert!(Path::new(&source_path).exists());
         fs::copy(source_path, dest_path)?;
+        logger::print_info(format!("Copied {} to {}", &file.bold(), &dest));
     }
     Ok(())
 }
