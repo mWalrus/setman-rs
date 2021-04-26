@@ -2,9 +2,9 @@ use crate::readline;
 use crate::logger;
 use crate::paths;
 
-use git2::{Commit, Cred, Error, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository, Signature, Tree};
+use git2::{Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository, Signature, Tree, build::RepoBuilder};
 use uuid::Uuid;
-use std::fs;
+use std::{borrow::Borrow, fs, path::Path};
 use std::process::exit;
 use serde::Deserialize;
 use toml::Value;
@@ -12,15 +12,19 @@ use paths::Paths;
 
 #[derive(Deserialize, Clone)]
 pub struct GitRepo {
-    upstream_url: String,
     repo_path: String,
 }
 
-// TODO: implement push functionality
-impl GitRepo {
-    pub fn new() -> GitRepo {
-        let git_config_path = Paths::new().git_config_path;
+#[derive(Deserialize, Clone, Debug)]
+struct GitSettings {
+    upstream_url: String,
+    user: Option<String>,
+    pass: Option<String>,
+}
 
+impl GitSettings {
+    fn new() -> GitSettings {
+        let git_config_path = Paths::new().git_config_path;
         let file_content = match fs::read_to_string(&git_config_path) {
             Ok(content) => content,
             Err(_e) => {
@@ -28,21 +32,27 @@ impl GitRepo {
                 exit(0);
             }
         };
-
-        // maybe add test repo for dev purpose
-        let upstream_url: String = match toml::from_str::<Value>(&file_content) {
-            Ok(value) => value["upstream_url"].as_str().unwrap().to_string(),
+        match toml::from_str::<GitSettings>(&file_content) {
+            Ok(settings) => {
+                GitSettings {
+                    upstream_url: settings.upstream_url,
+                    user: settings.user,
+                    pass: settings.pass,
+                }
+            },
             Err(_e) => {
                 logger::print_warn("Upstream url not found, exiting".to_string());
                 exit(0);
             }
-        };
+        }
+    }
+}
 
-        let repo_name = "setman-tmp-".to_string() + &Uuid::new_v4().to_string();
-
+// TODO: implement push functionality
+impl GitRepo {
+    pub fn new() -> GitRepo {
         GitRepo {
-            upstream_url,
-            repo_path: format!("/tmp/{}", &repo_name),
+            repo_path: "/tmp/setman-tmp-".to_string() + &Uuid::new_v4().to_string(),
         }
     }
 
@@ -88,7 +98,9 @@ impl GitRepo {
                 let parent = self.get_parent_commit(&repo);
                 self.create_commit(&repo, &signature, &tree, &parent).unwrap();
 
-                let mut push_opts = self.gen_push_opts(&signature);
+                let callbacks = self.gen_callbacks();
+                let mut push_opts = PushOptions::new();
+                push_opts.remote_callbacks(callbacks);
 
                 // push to remote origin
                 let mut origin = repo.find_remote("origin")?;
@@ -121,16 +133,27 @@ impl GitRepo {
         Ok(())
     }
 
-    fn gen_push_opts<'a>(&self, signature: &'a Signature) -> PushOptions<'a> {
+    fn gen_callbacks<'a>(&'a self) -> RemoteCallbacks<'a> {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
-            let password = readline::password("Enter your git password").unwrap();
-            Cred::userpass_plaintext(signature.name().unwrap(), &password)
+            //let password = readline::password("Enter your git password").unwrap();
+            let git_settings = GitSettings::new();
+            let user: String = match git_settings.user {
+                Some(user) => user,
+                None => {
+                    logger::print_warn("Could not find a provided git username".to_string());
+                    exit(0);
+                },
+            };
+            let password: String = git_settings
+                .pass
+                .unwrap_or(
+                    readline::password("Enter your git password")
+                    .unwrap()
+                );
+            Cred::userpass_plaintext(&user, &password)
         });
-
-        let mut push_opts = PushOptions::new();
-        push_opts.remote_callbacks(callbacks);
-        push_opts
+        callbacks
     }
 
     fn get_parent_commit<'a>(&self, repo: &'a Repository) -> Commit<'a> {
@@ -144,13 +167,16 @@ impl GitRepo {
     }
 
     pub fn clone_repo(&mut self) {
-        logger::print_job("Cloning down settings from ".to_string() + &self.upstream_url);
-        match Repository::clone(&self.upstream_url, &self.repo_path) {
-            Ok(repo) => {
-                logger::print_info(format!("Cloned into {}", &self.repo_path));
-                self.repo_path = repo.workdir().unwrap().to_str().unwrap().to_string()
-            },
-            Err(e) => panic!("Failed to clone: {}", e),
-        }
+        logger::print_job("Cloning down from upstream".to_owned());
+        let settings = GitSettings::new();
+
+        let callbacks = self.gen_callbacks();
+        let mut fetch_opts = FetchOptions::new();
+        fetch_opts.remote_callbacks(callbacks);
+
+        let mut builder = RepoBuilder::new();
+        builder.fetch_options(fetch_opts);
+
+        builder.clone(&settings.upstream_url, Path::new(&self.repo_path)).unwrap();
     }
 }

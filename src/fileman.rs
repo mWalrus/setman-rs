@@ -82,7 +82,6 @@ impl Apps {
 
 pub fn path_exists(path: &str) {
     if !Path::new(path).exists() {
-        logger::print_warn("Couldn't find ".to_owned() + path);
         logger::print_info("Creating ".to_owned() + path);
         fs::create_dir(path).unwrap(); // create dir if nonexistant
     };

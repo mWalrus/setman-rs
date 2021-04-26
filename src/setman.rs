@@ -38,8 +38,9 @@ pub fn sync_settings(direction: &str) {
         false => {
             let dirs_to_copy = gitman.clone().get_dir_names();
             for dir in dirs_to_copy.clone() {
-                let source = format!("{}{}", &repo_path, &dir);
+                let source = format!("{}/{}", &repo_path, &dir);
                 let dest = format!("{}/{}", &settings_path, &dir);
+                println!("Source: {}", &source);
                 let files = Path::new(&source).read_dir().unwrap();
                 let file_names = files
                     .into_iter()
