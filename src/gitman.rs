@@ -51,9 +51,9 @@ impl GitSettings {
 }
 
 impl GitRepo{
-    pub fn new() -> GitRepo {
+    pub fn new() -> Self {
         let git_settings = GitSettings::new();
-        GitRepo {
+        Self {
             repo_path: "/tmp/setman-tmp-".to_string() + &Uuid::new_v4().to_string(),
             git_settings,
         }
