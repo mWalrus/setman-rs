@@ -33,9 +33,9 @@ impl GitSettings {
                 exit(0);
             }
         };
-        match toml::from_str::<GitSettings>(&file_content) {
+        match toml::from_str::<Self>(&file_content) {
             Ok(settings) => {
-                GitSettings {
+                Self {
                     upstream_url: settings.upstream_url,
                     name: settings.name,
                     email: settings.email,
