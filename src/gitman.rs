@@ -10,14 +10,16 @@ use serde::Deserialize;
 use paths::Paths;
 
 #[derive(Deserialize, Clone)]
-pub struct GitRepo {
+pub struct GitRepo{
     repo_path: String,
+    git_settings: GitSettings,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 struct GitSettings {
     upstream_url: String,
-    user: Option<String>,
+    name: String,
+    email: String,
     pass: Option<String>,
 }
 
@@ -35,23 +37,25 @@ impl GitSettings {
             Ok(settings) => {
                 GitSettings {
                     upstream_url: settings.upstream_url,
-                    user: settings.user,
+                    name: settings.name,
+                    email: settings.email,
                     pass: settings.pass,
                 }
             },
             Err(_e) => {
-                logger::print_warn("Upstream url not found, exiting".to_string());
+                logger::print_warn(format!("Could not parse {}, exiting.", git_config_path));
                 exit(0);
             }
         }
     }
 }
 
-// TODO: implement push functionality
-impl GitRepo {
+impl GitRepo{
     pub fn new() -> GitRepo {
+        let git_settings = GitSettings::new();
         GitRepo {
             repo_path: "/tmp/setman-tmp-".to_string() + &Uuid::new_v4().to_string(),
+            git_settings,
         }
     }
 
@@ -136,21 +140,13 @@ impl GitRepo {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
             //let password = readline::password("Enter your git password").unwrap();
-            let git_settings = GitSettings::new();
-            let user: String = match git_settings.user {
-                Some(user) => user,
-                None => {
-                    logger::print_warn("Could not find a provided git username".to_string());
-                    exit(0);
-                },
-            };
-            let password: String = git_settings
+            let password: &str = &self.clone().git_settings
                 .pass
-                .unwrap_or(
+                .unwrap_or_else(||
                     readline::password("Enter your git password")
                     .unwrap()
                 );
-            Cred::userpass_plaintext(&user, &password)
+            Cred::userpass_plaintext(&self.git_settings.name, &password)
         });
         callbacks
     }
@@ -167,7 +163,6 @@ impl GitRepo {
 
     pub fn clone_repo(&mut self) {
         logger::print_job("Cloning down from upstream".to_owned());
-        let settings = GitSettings::new();
 
         let callbacks = self.gen_callbacks();
         let mut fetch_opts = FetchOptions::new();
@@ -176,6 +171,6 @@ impl GitRepo {
         let mut builder = RepoBuilder::new();
         builder.fetch_options(fetch_opts);
 
-        builder.clone(&settings.upstream_url, Path::new(&self.repo_path)).unwrap();
+        builder.clone(&self.git_settings.upstream_url, Path::new(&self.repo_path)).unwrap();
     }
 }
