@@ -106,8 +106,8 @@ pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> Result<(
     path_exists(source);
     path_exists(dest);
     for file in file_names {
-        let source_path = format!("{}/{}",source.to_string(), &file);
-        let dest_path = format!("{}/{}", dest.to_string(), &file);
+        let source_path = format!("{}/{}", &source, &file);
+        let dest_path = format!("{}/{}", &dest, &file);
         // check if source file exists before attempting copy
         assert!(Path::new(&source_path).exists());
         fs::copy(source_path, dest_path)?;

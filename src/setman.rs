@@ -27,11 +27,9 @@ pub fn sync_settings(direction: &str) {
             let mut apps = Apps::new();
             for dir_name in dir_names {
                 let app = apps.find_app_by_name(&dir_name).unwrap();
-                logger::print_job(format!("Copying files for {}", &dir_name));
-                let file_names = app.file_names;
-                let source = settings_path.to_string() + "/" + &app.name;
-                let dest = repo_path.to_string() + &app.name;
-                fileman::copy_files(file_names, &source, &dest).unwrap();
+                let source = format!("{}/{}", &settings_path, &app.name);
+                let dest = format!("{}/{}", &repo_path, &app.name);
+                fileman::copy_files(app.file_names, &source, &dest).unwrap();
             }
             gitman.push_changes().unwrap();
         },
@@ -166,6 +164,7 @@ pub fn remove_application(app_name: &str) {
     readline::are_you_sure("remove ".to_string() + app_name).unwrap();
     let mut apps = Apps::new();
     apps.remove_app(app_name);
+    logger::print_info("Done".to_string());
 }
 
 pub fn modify_application(app_name: &str) -> Result<(), Error> {

@@ -84,7 +84,6 @@ impl GitRepo{
     pub fn push_changes(self) -> Result<(), Error>{
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
-                logger::print_info("Using existing repo: ".to_string() + &self.repo_path);
 
                 let signature = repo.signature()?;
                 let mut index = repo.index().expect("Failed to get repo index");
