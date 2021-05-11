@@ -18,7 +18,7 @@ Before you can start using the git features of the application you need to enter
 
 ```
 upstream_url = "https://github.com/username/setman-settings-repo-name.git"
-user = "your-github-username"
+name = "your-github-username"
 email = "your@github.email"
 pass = "giTHuB-P@$$woRd" // can be omitted
 ```

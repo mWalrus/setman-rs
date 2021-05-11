@@ -42,8 +42,8 @@ impl GitSettings {
                     pass: settings.pass,
                 }
             },
-            Err(_e) => {
-                logger::print_warn(format!("Could not parse {}, exiting.", git_config_path));
+            Err(e) => {
+                logger::print_warn(format!("Could not parse {}. Error: {}", git_config_path, e));
                 exit(0);
             }
         }
