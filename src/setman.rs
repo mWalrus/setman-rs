@@ -1,3 +1,7 @@
+// Copyright (c) 2021 Oskar Hellkvist <hellkvistoskar@protonmail.com>
+
+// SPDX-License-Identifier: BSD-2-Clause
+
 use crate::fileman;
 use crate::gitman;
 use crate::paths;

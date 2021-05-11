@@ -1,3 +1,7 @@
+// Copyright (c) 2021 Oskar Hellkvist <hellkvistoskar@protonmail.com>
+
+// SPDX-License-Identifier: BSD-2-Clause
+
 extern crate clap;
 extern crate colored;
 extern crate home;
