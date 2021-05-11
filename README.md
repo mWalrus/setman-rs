@@ -7,11 +7,16 @@ SetMan solves this problem! It works by letting you enter the application you wa
 - Rust
 - Cargo
 
+## Prerequisites
+To build and install this application you will need to install `cargo-make` using cargo
+```
+cargo install --force cargo-make
+```
+
 ## Installation
 1. `git clone https://github.com/mWalrus/setman-rs.git setman`
 2. `cd setman`
-3. `cargo build --release`
-4. `sudo install -s -Dm755 ./target/release/setman-rs /usr/bin/setman`
+3. `cargo make install`
 
 ## Post install
 Before you can start using the git features of the application you need to enter your git username and upstream url in the git.toml file in $HOME/.config/setman/

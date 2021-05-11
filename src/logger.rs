@@ -20,10 +20,19 @@ pub fn print_new_app_header() {
     println!("{} {}", "[-]".blue().bold(), "New application:".bold());
 }
 
-pub fn print_app(app_name: String, app_config_path: String, app_file_names: Vec<String>, verbose: bool) {
+pub fn print_app(
+    app_name: String,
+    app_config_path: String,
+    app_file_names: Vec<String>,
+    verbose: bool,
+) {
     println!("  {} {}", "-".bold().bright_purple(), app_name.bold());
     if verbose {
-        println!("      {} {}", "Config path =>".bold().bright_cyan(), app_config_path);
+        println!(
+            "      {} {}",
+            "Config path =>".bold().bright_cyan(),
+            app_config_path
+        );
         println!("      {}", "File names:".bold().bright_green());
         for file in app_file_names {
             println!("          {} {}", "=>".bold().bright_green(), file);

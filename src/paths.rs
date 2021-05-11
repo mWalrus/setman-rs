@@ -15,9 +15,10 @@ pub struct Paths {
 impl Paths {
     pub fn new() -> Paths {
         Paths {
-            user_conf_path: home_dir().unwrap().display().to_string()  + "/.config/setman",
+            user_conf_path: home_dir().unwrap().display().to_string() + "/.config/setman",
             settings_path: home_dir().unwrap().display().to_string() + "/.config/setman/settings",
-            apps_config_path: home_dir().unwrap().display().to_string() + "/.config/setman/apps.toml",
+            apps_config_path: home_dir().unwrap().display().to_string()
+                + "/.config/setman/apps.toml",
             git_config_path: home_dir().unwrap().display().to_string() + "/.config/setman/git.toml",
         }
     }

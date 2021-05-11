@@ -2,19 +2,22 @@
 
 // SPDX-License-Identifier: BSD-2-Clause
 
-use crate::readline;
 use crate::logger;
 use crate::paths;
+use crate::readline;
 
-use git2::{Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions, RemoteCallbacks, Repository, Signature, Tree, build::RepoBuilder};
-use uuid::Uuid;
-use std::{fs, path::Path};
-use std::process::exit;
-use serde::Deserialize;
+use git2::{
+    build::RepoBuilder, Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions,
+    RemoteCallbacks, Repository, Signature, Tree,
+};
 use paths::Paths;
+use serde::Deserialize;
+use std::process::exit;
+use std::{fs, path::Path};
+use uuid::Uuid;
 
 #[derive(Deserialize, Clone)]
-pub struct GitRepo{
+pub struct GitRepo {
     repo_path: String,
     git_settings: GitSettings,
 }
@@ -38,13 +41,11 @@ impl GitSettings {
             }
         };
         match toml::from_str::<Self>(&file_content) {
-            Ok(settings) => {
-                Self {
-                    upstream_url: settings.upstream_url,
-                    name: settings.name,
-                    email: settings.email,
-                    pass: settings.pass,
-                }
+            Ok(settings) => Self {
+                upstream_url: settings.upstream_url,
+                name: settings.name,
+                email: settings.email,
+                pass: settings.pass,
             },
             Err(e) => {
                 logger::print_warn(format!("Could not parse {}. Error: {}", git_config_path, e));
@@ -54,7 +55,7 @@ impl GitSettings {
     }
 }
 
-impl GitRepo{
+impl GitRepo {
     pub fn new() -> Self {
         let git_settings = GitSettings::new();
         Self {
@@ -85,10 +86,9 @@ impl GitRepo{
         self.repo_path.as_str()
     }
 
-    pub fn push_changes(self) -> Result<(), Error>{
+    pub fn push_changes(self) -> Result<(), Error> {
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
-
                 let signature = repo.signature()?;
                 let mut index = repo.index().expect("Failed to get repo index");
 
@@ -102,7 +102,8 @@ impl GitRepo{
                 let tree = repo.find_tree(tree_id)?;
 
                 let parent = self.get_parent_commit(&repo);
-                self.create_commit(&repo, &signature, &tree, &parent).unwrap();
+                self.create_commit(&repo, &signature, &tree, &parent)
+                    .unwrap();
 
                 let callbacks = self.gen_callbacks();
                 let mut push_opts = PushOptions::new();
@@ -114,12 +115,18 @@ impl GitRepo{
                 origin.push(&["refs/heads/main"], Some(&mut push_opts))?;
                 logger::print_info("Done!".to_string());
                 Ok(())
-            },
+            }
             Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
         }
     }
 
-    fn create_commit(&self, repo: &Repository, signature: &Signature, tree: &Tree, parent: &Commit) -> Result<(), Error> {
+    fn create_commit(
+        &self,
+        repo: &Repository,
+        signature: &Signature,
+        tree: &Tree,
+        parent: &Commit,
+    ) -> Result<(), Error> {
         let commit_msg = readline::read("Enter a commit message").unwrap();
         let pretty_message = git2::message_prettify(commit_msg, None)?;
         let new_commit_id: Oid = match repo.commit(
@@ -127,13 +134,14 @@ impl GitRepo{
             &signature,
             &signature,
             &pretty_message,
-            &tree, &[parent])
-        {
+            &tree,
+            &[parent],
+        ) {
             Ok(commit) => commit,
             Err(e) => {
                 println!("Failed to create commit: {}", e);
                 exit(0);
-            },
+            }
         };
         logger::print_info(format!("Created new commit with id: {}", new_commit_id));
         Ok(())
@@ -143,12 +151,11 @@ impl GitRepo{
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
             //let password = readline::password("Enter your git password").unwrap();
-            let password: &str = &self.clone().git_settings
+            let password: &str = &self
+                .clone()
+                .git_settings
                 .pass
-                .unwrap_or_else(||
-                    readline::password("Enter your git password")
-                    .unwrap()
-                );
+                .unwrap_or_else(|| readline::password("Enter your git password").unwrap());
             Cred::userpass_plaintext(&self.git_settings.name, &password)
         });
         callbacks
@@ -160,8 +167,11 @@ impl GitRepo{
             Err(e) => {
                 eprintln!("Error: {}", e);
                 exit(0)
-            },
-        }.as_commit().unwrap().to_owned()
+            }
+        }
+        .as_commit()
+        .unwrap()
+        .to_owned()
     }
 
     pub fn clone_repo(&mut self) {
@@ -174,6 +184,8 @@ impl GitRepo{
         let mut builder = RepoBuilder::new();
         builder.fetch_options(fetch_opts);
 
-        builder.clone(&self.git_settings.upstream_url, Path::new(&self.repo_path)).unwrap();
+        builder
+            .clone(&self.git_settings.upstream_url, Path::new(&self.repo_path))
+            .unwrap();
     }
 }

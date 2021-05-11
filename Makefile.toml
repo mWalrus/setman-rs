@@ -1,0 +1,32 @@
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--emit=files"]
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.build]
+command = "cargo"
+args = ["build", "--release"]
+dependencies = ["clean"]
+
+[tasks.make-config]
+script = "mkdir -p $HOME/.config/setman/settings"
+
+[tasks.touch-git-file]
+script = "touch $HOME/.config/setman/git.toml"
+
+[tasks.copy-binary]
+script = "sudo install -s -Dm755 ./target/release/setman /usr/bin/setman"
+
+[tasks.install]
+dependencies = [
+  "clean",
+  "build",
+  "make-config",
+  "touch-git-file",
+  "copy-binary"
+]
+

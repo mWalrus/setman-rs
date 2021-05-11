@@ -2,16 +2,16 @@
 
 // SPDX-License-Identifier: BSD-2-Clause
 
+use crate::colored;
 use crate::logger;
 use crate::paths;
-use crate::colored;
 
+use colored::*;
+use paths::Paths;
 use serde::{Deserialize, Serialize};
-use std::{io::Result, path::Path};
 use std::fs;
 use std::process::exit;
-use paths::Paths;
-use colored::*;
+use std::{io::Result, path::Path};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Apps {
@@ -30,7 +30,7 @@ impl App {
         App {
             name,
             config_path,
-            file_names
+            file_names,
         }
     }
 }
@@ -47,9 +47,7 @@ impl Apps {
 
         match toml::from_str::<Apps>(&file_content) {
             Ok(toml) => toml,
-            Err(_e) => {
-                toml::from_str::<Apps>("items = []").unwrap()
-            }
+            Err(_e) => toml::from_str::<Apps>("items = []").unwrap(),
         }
     }
 
@@ -57,7 +55,10 @@ impl Apps {
         let pos: usize = match self.items.iter().position(|i| i.name == app_name) {
             Some(pos) => pos,
             None => {
-                logger::print_warn(format!("Application with name '{}' could not be found", &app_name));
+                logger::print_warn(format!(
+                    "Application with name '{}' could not be found",
+                    &app_name
+                ));
                 exit(0);
             }
         };
@@ -68,7 +69,7 @@ impl Apps {
         for app_item in self.items.clone() {
             if app_item.name.eq(&app.name) {
                 logger::print_warn("An app with that name already exists".to_string());
-                return
+                return;
             }
         }
         self.items.push(app);
@@ -120,7 +121,7 @@ pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> Result<(
     Ok(())
 }
 
-pub fn remove_files(conf_path: &str) -> Result<()>{
+pub fn remove_files(conf_path: &str) -> Result<()> {
     let files = fs::read_dir(conf_path)?;
     for file in files {
         let file_path = file?.path();
