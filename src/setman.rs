@@ -14,19 +14,33 @@ use paths::Paths;
 use std::path::Path;
 use std::{io::Error, process::exit};
 
+pub enum SetmanAction<'a> {
+    Install(&'a str),
+    Uninstall(&'a str),
+    Save(&'a str),
+    Modify(&'a str),
+    Remove(&'a str),
+    InstallAll(Vec<String>),
+    UninstallAll(Vec<String>),
+    SaveAll(Vec<String>),
+    New,
+    SyncUp,
+    SyncDown,
+}
+
 pub fn check_path_existance() {
     let paths = Paths::new();
     fileman::path_exists(&paths.user_conf_path);
     fileman::path_exists(&paths.settings_path);
 }
 
-pub fn sync_settings(direction: &str) {
+pub fn sync_settings(action: SetmanAction) {
     let settings_path = &Paths::new().settings_path;
     let mut gitman = GitRepo::new();
     gitman.clone_repo();
     let repo_path = gitman.get_repo_path();
-    match direction.eq("up") {
-        true => {
+    match action {
+        SetmanAction::SyncUp => {
             let dir_names = fileman::get_dir_names_in_path(&settings_path).unwrap();
             let mut apps = Apps::new();
             for dir_name in dir_names {
@@ -37,7 +51,7 @@ pub fn sync_settings(direction: &str) {
             }
             gitman.push_changes().unwrap();
         }
-        false => {
+        SetmanAction::SyncDown => {
             let dirs_to_copy = gitman.clone().get_dir_names();
             for dir in dirs_to_copy.clone() {
                 let source = format!("{}/{}", &repo_path, &dir);
@@ -50,6 +64,10 @@ pub fn sync_settings(direction: &str) {
                 fileman::copy_files(file_names, &source, &dest).unwrap();
             }
         }
+        _ => {
+            println!("Invalid option, exiting.");
+            exit(0);
+        }
     }
 }
 
@@ -61,7 +79,7 @@ pub fn take_new_application() {
 
     let files_names = config_files.split_whitespace().map(String::from).collect();
     let mut apps = Apps::new();
-    apps.save_new_app(App::new(app_name, app_config_path, files_names));
+    apps.save_new_app(App::new(app_name, app_config_path, files_names)).unwrap();
 }
 
 pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
@@ -93,101 +111,81 @@ fn copy_app_files(app: &App, from_local: bool) {
     fileman::copy_files(app.clone().file_names, &app_conf_path, &app_local_path).unwrap();
 }
 
-fn app_action(message: String, app_name: &str, from_local: bool) {
-    logger::print_job(message);
+pub fn app_action(action: SetmanAction) {
     let mut apps = Apps::new();
-    let app = apps.find_app_by_name(app_name).unwrap();
-    copy_app_files(&app, from_local);
+    match action {
+        SetmanAction::Install(app_name) => {
+            let app = apps.find_app_by_name(&app_name).unwrap();
+            logger::print_job(format!("Installing {}", app_name));
+            copy_app_files(&app, true);
+        },
+        SetmanAction::Uninstall(app_name) => {
+            logger::print_job(format!("Uninstalling {}", app_name));
+            fileman::remove_files(&Paths::new().get_app_path(&app_name));
+        },
+        SetmanAction::Save(app_name) => {
+            let app = apps.find_app_by_name(&app_name).unwrap();
+            logger::print_job(format!("Saving {}", app_name));
+            copy_app_files(&app, false);
+        },
+        SetmanAction::Modify(app_name) => {
+            logger::print_job(format!("Modify {}", &app_name));
+            modify_application(app_name);
+        },
+        SetmanAction::Remove(app_name) => {
+            logger::print_job(format!("Removing {}", &app_name));
+            remove_application(&app_name);
+        },
+
+        _ => {
+            println!("Invalid option, exiting.");
+            exit(0);
+        }
+    }
 }
 
-fn all_apps_action(message: String, apps_to_skip: Vec<&str>, from_local: bool) {
-    logger::print_job(message);
+pub fn all_apps_action(action: SetmanAction) {
     let apps = Apps::new();
+
     for app in apps.items.iter() {
-        if !apps_to_skip.contains(&app.name.as_str()) {
-            copy_app_files(app, from_local);
-        }
+        match action {
+            SetmanAction::InstallAll(apps_to_skip) => {
+                logger::print_job("Installing all applications".to_owned());
+                if !apps_to_skip.contains(&app.name) {
+                    copy_app_files(app, true);
+                }
+            },
+            SetmanAction::UninstallAll(apps_to_skip) => {
+                logger::print_job("Uninstalling all applications".to_owned());
+                if !apps_to_skip.contains(&app.name) {
+                    fileman::remove_files(&app.config_path).unwrap();
+                }
+            },
+            SetmanAction::SaveAll(apps_to_skip) => {
+                logger::print_job("Saving all applications".to_owned());
+                if !apps_to_skip.contains(&app.name) {
+                    copy_app_files(app, false)
+                }
+            },
+            _ => {
+                println!("Invalid option, exiting");
+                exit(0);
+            }
+        };
     }
-}
 
-pub fn save_application(app_name: &str) {
-    app_action(
-        format!("Saving application {} to local collection", app_name),
-        app_name,
-        false,
-    );
-}
-
-pub fn install_application(app_name: &str) {
-    app_action(
-        format!("Installing application {}", app_name),
-        app_name,
-        true,
-    );
-}
-
-pub fn save_all_applications(apps_to_skip: Vec<&str>) {
-    all_apps_action(
-        "Saving all applications' settings".to_owned(),
-        apps_to_skip,
-        false,
-    );
-}
-
-pub fn install_all_applications(apps_to_skip: Vec<&str>) {
-    all_apps_action(
-        "Installing all applications' settings".to_owned(),
-        apps_to_skip,
-        true,
-    );
-}
-
-fn uninstall_pre(ru_sure_action: String, job_msg: String) -> Apps {
-    if !readline::are_you_sure(ru_sure_action).unwrap() {
-        logger::print_info("Exiting".to_owned());
-        exit(0);
-    }
-    logger::print_job(job_msg);
-    Apps::new()
-}
-
-pub fn uninstall_application(app_name: &str) {
-    let mut apps = uninstall_pre(
-        "uninstall ".to_owned() + &app_name,
-        "Uninstalling ".to_owned() + &app_name,
-    );
-    let app = apps.find_app_by_name(&app_name).unwrap();
-    fileman::remove_files(&Paths::new().get_app_path(&app.name)).unwrap();
-}
-
-pub fn uninstall_all_applications(apps_to_skip: Vec<&str>) {
-    let apps = uninstall_pre(
-        "uninstall all applications' settings".to_owned(),
-        "Uninstalling all applications".to_owned(),
-    );
-    let paths = Paths::new();
-    for app in apps.items.iter() {
-        if !apps_to_skip.contains(&app.name.as_str()) {
-            let conf_path = paths.clone().get_app_path(&app.name);
-            let tmp_app = app.clone();
-            logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, true);
-            fileman::remove_files(&conf_path).unwrap();
-        }
-    }
 }
 
 pub fn remove_application(app_name: &str) {
-    logger::print_warn("Removing ".to_owned() + &app_name);
     readline::are_you_sure("remove ".to_string() + app_name).unwrap();
     let mut apps = Apps::new();
-    apps.remove_app(app_name);
+    apps.remove_app(app_name).unwrap();
     logger::print_info("Done".to_string());
 }
 
 pub fn modify_application(app_name: &str) -> Result<(), Error> {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name).unwrap();
-    logger::print_job("Modify ".to_owned() + &app_name);
     let mod_options = vec!["Name", "Config path", "File names"];
     match readline::select(mod_options.clone())? {
         0 => app.name = readline::read("Enter a new name")?,
@@ -209,8 +207,8 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
     }
     // make sure user wants to modify the application
     if readline::are_you_sure("modify ".to_owned() + &app_name)? {
-        apps.remove_app(app_name);
-        apps.save_new_app(app);
+        apps.remove_app(app_name)?;
+        apps.save_new_app(app)?;
     };
     Ok(())
 }

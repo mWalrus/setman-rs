@@ -65,25 +65,28 @@ impl Apps {
         Some(self.items.get(pos)?.clone())
     }
 
-    pub fn save_new_app(&mut self, app: App) {
+    pub fn save_new_app(&mut self, app: App) -> Result<()> {
         for app_item in self.items.clone() {
             if app_item.name.eq(&app.name) {
                 logger::print_warn("An app with that name already exists".to_string());
-                return;
+                return Ok(());
             }
         }
         self.items.push(app);
-        self.write_toml();
+        self.write_toml()?;
+        Ok(())
     }
 
-    pub fn remove_app(&mut self, app_name: &str) {
+    pub fn remove_app(&mut self, app_name: &str) -> Result<()> {
         self.items.retain(|a| a.name.ne(app_name));
-        self.write_toml();
+        self.write_toml()?;
+        Ok(())
     }
 
-    fn write_toml(&self) {
+    fn write_toml(&self) -> Result<()>{
         let toml = toml::to_string(&self).unwrap();
-        fs::write(Paths::new().apps_config_path, &toml).unwrap();
+        fs::write(Paths::new().apps_config_path, &toml)?;
+        Ok(())
     }
 }
 

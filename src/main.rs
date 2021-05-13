@@ -19,8 +19,9 @@ mod paths;
 mod readline;
 mod setman;
 
-use clap::ArgMatches;
+use clap::Values;
 use colored::*;
+use setman::SetmanAction;
 use std::process::exit;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
@@ -34,7 +35,7 @@ fn main() {
   +#++:++#++ +#++:++#       +#+   +#+  +:+  +#+ +#++:++#++: +#+ +:+ +#+
         +#+ +#+            +#+   +#+       +#+ +#+     +#+ +#+  +#+#+#
 #+#    #+# #+#            #+#   #+#       #+# #+#     #+# #+#   #+#+#
-########  ##########     ###   ###       ### ###     ### ###    ####       "
+########  ##########     ###   ###       ### ###     ### ###    ####"
             .bold()
             .blue(),
         "Application settings manager".bright_cyan().bold()
@@ -57,53 +58,90 @@ fn main() {
 
             setman::print_app_list(app_names, verbose);
         }
-        ("install", Some(sub_m)) => perform_action(
-            sub_m,
-            Box::new(setman::install_application),
-            Box::new(setman::install_all_applications),
-        ),
-        ("uninstall", Some(sub_m)) => perform_action(
-            sub_m,
-            Box::new(setman::uninstall_application),
-            Box::new(setman::uninstall_all_applications),
-        ),
-        ("save", Some(sub_m)) => perform_action(
-            sub_m,
-            Box::new(setman::save_application),
-            Box::new(setman::save_all_applications),
-        ),
+        ("install", Some(sub_m)) => {
+            match sub_m.subcommand() {
+                ("app", Some(app_subcommand)) => {
+                    setman::app_action(
+                        SetmanAction::Install(
+                            app_subcommand.value_of("application").unwrap()
+                        )
+                    );
+                },
+                ("all", Some(all_subcommand)) => {
+                    setman::all_apps_action(
+                        SetmanAction::InstallAll(
+                            get_skipped_apps(all_subcommand.values_of("skip"))
+                        )
+                    )
+                },
+                _ => {}
+            }
+        },
+        ("uninstall", Some(sub_m)) => {
+            match sub_m.subcommand() {
+                ("app", Some(app_subcommand)) => {
+                    setman::app_action(
+                        SetmanAction::Uninstall(
+                            app_subcommand.value_of("application").unwrap()
+                        )
+                    );
+                },
+                ("all", Some(all_subcommand)) => {
+                    setman::all_apps_action(
+                        SetmanAction::UninstallAll(
+                            get_skipped_apps(all_subcommand.values_of("skip"))
+                        )
+                    );
+                },
+                _ => {}
+            }
+        },
+        ("save", Some(sub_m)) => {
+            match sub_m.subcommand() {
+                ("app", Some(app_subcommand)) => {
+                    setman::app_action(
+                        SetmanAction::Save(
+                            app_subcommand.value_of("application").unwrap()
+                        )
+                    );
+                },
+                ("all", Some(all_subcommand)) => {
+                    setman::all_apps_action(
+                        SetmanAction::SaveAll(
+                            get_skipped_apps(all_subcommand.values_of("skip"))
+                        )
+                    );
+                },
+                _ => {}
+            }
+        },
         ("modify", Some(sub_m)) => {
             let app_name = sub_m.value_of("app").unwrap();
-            setman::modify_application(app_name).unwrap()
+            setman::app_action(SetmanAction::Modify(&app_name));
         }
         ("remove", Some(sub_m)) => {
             let app_name = sub_m.value_of("app").unwrap();
-            setman::remove_application(&app_name);
+            setman::app_action(SetmanAction::Remove(&app_name));
         }
         ("new", Some(_sub_m)) => setman::take_new_application(),
         ("sync", Some(sub_m)) => {
             let direction = sub_m.value_of("direction").unwrap().to_lowercase();
-            setman::sync_settings(&direction);
+            match direction.eq("up") {
+                true => setman::sync_settings(SetmanAction::SyncUp),
+                false => setman::sync_settings(SetmanAction::SyncDown),
+            };
         }
         _ => exit(0),
     }
 }
 
-fn perform_action(
-    sub_command: &ArgMatches,
-    single: Box<dyn FnOnce(&str)>,
-    multi: Box<dyn FnOnce(Vec<&str>)>,
-) {
-    match sub_command.subcommand() {
-        ("app", Some(cmd)) => {
-            if cmd.is_present("application") {
-                single(cmd.value_of("application").unwrap());
-            }
-        }
-        ("all", Some(cmd)) => match cmd.values_of("skip") {
-            Some(app_names) => multi(app_names.collect::<Vec<&str>>()),
-            None => multi(Vec::<&str>::new()),
+fn get_skipped_apps<'a>(arg_values: Option<Values<'a>>) -> Vec<String> {
+    match arg_values {
+        Some(app_names) => {
+            app_names
+                .map(|names| names.to_string())
+                .collect::<Vec<String>>()
         },
-        _ => exit(0),
+        None => Vec::<String>::new(),
     }
 }
