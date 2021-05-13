@@ -71,17 +71,6 @@ pub fn sync_settings(action: SetmanAction) {
     }
 }
 
-pub fn take_new_application() {
-    logger::print_new_app_header();
-    let app_name = readline::read("Enter Application name").unwrap();
-    let app_config_path = readline::read("Config path (relative to home)").unwrap();
-    let config_files = readline::read("File names to save (space separated)").unwrap();
-
-    let files_names = config_files.split_whitespace().map(String::from).collect();
-    let mut apps = Apps::new();
-    apps.save_new_app(App::new(app_name, app_config_path, files_names)).unwrap();
-}
-
 pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
     logger::print_info("Applications:".to_string());
     let mut apps = Apps::new();
@@ -136,7 +125,16 @@ pub fn app_action(action: SetmanAction) {
             logger::print_job(format!("Removing {}", &app_name));
             remove_application(&app_name);
         },
+        SetmanAction::New => {
+            logger::print_new_app_header();
+            let app_name = readline::read("Enter Application name").unwrap();
+            let app_config_path = readline::read("Config path (relative to home)").unwrap();
+            let config_files = readline::read("File names to save (space separated)").unwrap();
 
+            let files_names = config_files.split_whitespace().map(String::from).collect();
+            let mut apps = Apps::new();
+            apps.save_new_app(App::new(app_name, app_config_path, files_names)).unwrap();
+        },
         _ => {
             println!("Invalid option, exiting.");
             exit(0);

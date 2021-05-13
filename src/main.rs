@@ -123,7 +123,7 @@ fn main() {
             let app_name = sub_m.value_of("app").unwrap();
             setman::app_action(SetmanAction::Remove(&app_name));
         }
-        ("new", Some(_sub_m)) => setman::take_new_application(),
+        ("new", Some(_sub_m)) => setman::app_action(SetmanAction::New),
         ("sync", Some(sub_m)) => {
             let direction = sub_m.value_of("direction").unwrap().to_lowercase();
             match direction.eq("up") {
