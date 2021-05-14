@@ -72,7 +72,7 @@ pub fn sync_settings(action: SetmanAction) {
 }
 
 pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
-    logger::print_info("Applications:".to_string());
+    logger::print_job("Applications:".to_string());
     let mut apps = Apps::new();
     if app_names != None {
         for name in app_names.unwrap() {

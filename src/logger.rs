@@ -26,16 +26,16 @@ pub fn print_app(
     app_file_names: Vec<String>,
     verbose: bool,
 ) {
-    println!("  {} {}", "-".bold().bright_purple(), app_name.bold());
+    print_info(app_name);
     if verbose {
         println!(
-            "      {} {}",
+            "    {} {}",
             "Config path =>".bold().bright_cyan(),
             app_config_path
         );
-        println!("      {}", "File names:".bold().bright_green());
+        println!("    {}", "File names:".bold().bright_green());
         for file in app_file_names {
-            println!("          {} {}", "=>".bold().bright_green(), file);
+            println!("      {} {}", "=>".bold().bright_green(), file);
         }
     }
 }
