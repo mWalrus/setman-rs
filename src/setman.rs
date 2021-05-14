@@ -20,9 +20,9 @@ pub enum SetmanAction<'a> {
     Save(&'a str),
     Modify(&'a str),
     Remove(&'a str),
-    InstallAll(Vec<String>),
-    UninstallAll(Vec<String>),
-    SaveAll(Vec<String>),
+    InstallAll(&'a Vec<String>),
+    UninstallAll(&'a Vec<String>),
+    SaveAll(&'a Vec<String>),
     New,
     SyncUp,
     SyncDown,
@@ -110,7 +110,7 @@ pub fn app_action(action: SetmanAction) {
         },
         SetmanAction::Uninstall(app_name) => {
             logger::print_job(format!("Uninstalling {}", app_name));
-            fileman::remove_files(&Paths::new().get_app_path(&app_name));
+            fileman::remove_files(&Paths::new().get_app_path(&app_name)).unwrap();
         },
         SetmanAction::Save(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
@@ -119,7 +119,7 @@ pub fn app_action(action: SetmanAction) {
         },
         SetmanAction::Modify(app_name) => {
             logger::print_job(format!("Modify {}", &app_name));
-            modify_application(app_name);
+            modify_application(app_name).unwrap();
         },
         SetmanAction::Remove(app_name) => {
             logger::print_job(format!("Removing {}", &app_name));

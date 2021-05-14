@@ -70,7 +70,7 @@ fn main() {
                 ("all", Some(all_subcommand)) => {
                     setman::all_apps_action(
                         SetmanAction::InstallAll(
-                            get_skipped_apps(all_subcommand.values_of("skip"))
+                            &get_skipped_apps(all_subcommand.values_of("skip"))
                         )
                     )
                 },
@@ -89,7 +89,7 @@ fn main() {
                 ("all", Some(all_subcommand)) => {
                     setman::all_apps_action(
                         SetmanAction::UninstallAll(
-                            get_skipped_apps(all_subcommand.values_of("skip"))
+                            &get_skipped_apps(all_subcommand.values_of("skip"))
                         )
                     );
                 },
@@ -108,7 +108,7 @@ fn main() {
                 ("all", Some(all_subcommand)) => {
                     setman::all_apps_action(
                         SetmanAction::SaveAll(
-                            get_skipped_apps(all_subcommand.values_of("skip"))
+                            &get_skipped_apps(all_subcommand.values_of("skip"))
                         )
                     );
                 },
