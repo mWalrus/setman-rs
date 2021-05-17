@@ -30,3 +30,9 @@ dependencies = [
   "copy-binary"
 ]
 
+[tasks.update]
+dependencies = [
+  "clean",
+  "build",
+  "copy-binary"
+]
