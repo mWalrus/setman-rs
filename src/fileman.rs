@@ -125,10 +125,13 @@ pub fn copy_files(file_names: Vec<String>, source: &str, dest: &str) -> Result<(
 }
 
 pub fn remove_files(conf_path: &str) -> Result<()> {
+    logger::print_job(format!("Removing files in {}", &conf_path));
     let files = fs::read_dir(conf_path)?;
     for file in files {
         let file_path = file?.path();
-        logger::print_warn("Removing file ".to_owned() + &file_path.display().to_string());
+        logger::print_info(
+            format!("Removing file {}", &file_path.display().to_string())
+        );
         fs::remove_file(&file_path)?;
     }
     Ok(())
