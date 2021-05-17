@@ -20,26 +20,14 @@ mod readline;
 mod setman;
 
 use clap::Values;
-use colored::*;
 use setman::SetmanAction;
 use std::process::exit;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
 
 fn main() {
-    println!(
-        "{}\n\n{}\n",
-        "      ::::::::  :::::::::: ::::::::::: :::   :::       :::     ::::    :::
-    :+:    :+: :+:            :+:    :+:+: :+:+:    :+: :+:   :+:+:   :+:
-   +:+        +:+            +:+   +:+ +:+:+ +:+  +:+   +:+  :+:+:+  +:+
-  +#++:++#++ +#++:++#       +#+   +#+  +:+  +#+ +#++:++#++: +#+ +:+ +#+
-        +#+ +#+            +#+   +#+       +#+ +#+     +#+ +#+  +#+#+#
-#+#    #+# #+#            #+#   #+#       #+# #+#     #+# #+#   #+#+#
-########  ##########     ###   ###       ### ###     ### ###    ####"
-            .bold()
-            .blue(),
-        "Application settings manager".bright_cyan().bold()
-    );
+    logger::print_header();
+
     setman::check_path_existance();
 
     match args::parse_args().subcommand() {
