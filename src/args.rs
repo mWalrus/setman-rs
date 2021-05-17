@@ -133,5 +133,7 @@ pub fn parse_args() -> ArgMatches<'static> {
                     .index(1),
             ),
         )
+        .subcommand(SubCommand::with_name("compare")
+            .about("Checks if upstream has newer content than the local copy"))
         .get_matches()
 }
