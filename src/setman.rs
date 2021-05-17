@@ -110,7 +110,8 @@ pub fn app_action(action: SetmanAction) {
         },
         SetmanAction::Uninstall(app_name) => {
             logger::print_job(format!("Uninstalling {}", app_name));
-            fileman::remove_files(&Paths::new().get_app_path(&app_name)).unwrap();
+            let app = apps.find_app_by_name(app_name).unwrap();
+            fileman::remove_files(&app.config_path).unwrap();
         },
         SetmanAction::Save(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
@@ -122,8 +123,13 @@ pub fn app_action(action: SetmanAction) {
             modify_application(app_name).unwrap();
         },
         SetmanAction::Remove(app_name) => {
+            readline::are_you_sure("remove ".to_string() + app_name).unwrap();
             logger::print_job(format!("Removing {}", &app_name));
-            remove_application(&app_name);
+            // remove app from saved list of apps
+            apps.remove_app(app_name).unwrap();
+            // remove the application's files in the local copy of configs
+            fileman::remove_files(&Paths::new().get_app_path(&app_name)).unwrap();
+            logger::print_info("Done".to_string());
         },
         SetmanAction::New => {
             logger::print_new_app_header();
@@ -172,13 +178,6 @@ pub fn all_apps_action(action: SetmanAction) {
         };
     }
 
-}
-
-pub fn remove_application(app_name: &str) {
-    readline::are_you_sure("remove ".to_string() + app_name).unwrap();
-    let mut apps = Apps::new();
-    apps.remove_app(app_name).unwrap();
-    logger::print_info("Done".to_string());
 }
 
 pub fn modify_application(app_name: &str) -> Result<(), Error> {
