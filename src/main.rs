@@ -113,12 +113,18 @@ fn main() {
         }
         ("new", Some(_sub_m)) => setman::app_action(SetmanAction::New),
         ("sync", Some(sub_m)) => {
-            let direction = sub_m.value_of("direction").unwrap().to_lowercase();
+            let direction = sub_m
+                .value_of("direction")
+                .unwrap()
+                .to_lowercase();
             match direction.eq("up") {
                 true => setman::sync_settings(SetmanAction::SyncUp),
                 false => setman::sync_settings(SetmanAction::SyncDown),
             };
-        }
+        },
+        ("compare", Some(_sub_m)) => {
+            setman::compare_upstream();
+        },
         _ => exit(0),
     }
 }

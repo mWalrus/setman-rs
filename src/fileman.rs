@@ -37,7 +37,7 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
-        let file_content: String = match fs::read_to_string(Paths::new().apps_config_path) {
+        let file_content: String = match fs::read_to_string(Paths::new().applist_path) {
             Ok(content) => content,
             Err(e) => {
                 println!("Error opening file: {}", e);
@@ -85,7 +85,7 @@ impl Apps {
 
     fn write_toml(&self) -> Result<()>{
         let toml = toml::to_string(&self).unwrap();
-        fs::write(Paths::new().apps_config_path, &toml)?;
+        fs::write(Paths::new().applist_path, &toml)?;
         Ok(())
     }
 }

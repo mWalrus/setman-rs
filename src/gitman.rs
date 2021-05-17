@@ -8,17 +8,18 @@ use crate::readline;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions,
-    RemoteCallbacks, Repository, Signature, Tree, Time,
+    RemoteCallbacks, Repository, Signature, Tree,
 };
 use paths::Paths;
 use serde::Deserialize;
-use std::process::exit;
+use std::{fs::File, io::{LineWriter, Write}, process::exit};
 use std::{fs, path::Path};
 use uuid::Uuid;
+use std::path::PathBuf;
 
 #[derive(Deserialize, Clone)]
 pub struct GitRepo {
-    repo_path: String,
+    repo_path: PathBuf,
     git_settings: GitSettings,
 }
 
@@ -36,8 +37,7 @@ impl GitSettings {
         let file_content = match fs::read_to_string(&git_config_path) {
             Ok(content) => content,
             Err(_e) => {
-                logger::print_warn(format!("File {} not found, exiting", git_config_path));
-                exit(0);
+                panic!("File {} not found, exiting", git_config_path.to_str().unwrap());
             }
         };
         match toml::from_str::<Self>(&file_content) {
@@ -48,8 +48,7 @@ impl GitSettings {
                 pass: settings.pass,
             },
             Err(e) => {
-                logger::print_warn(format!("Could not parse {}. Error: {}", git_config_path, e));
-                exit(0);
+                panic!("Could not parse {}. Error: {}", git_config_path.to_str().unwrap(), e);
             }
         }
     }
@@ -58,8 +57,13 @@ impl GitSettings {
 impl GitRepo {
     pub fn new() -> Self {
         let git_settings = GitSettings::new();
+        let tmp_dir_name = "setman-tmp-".to_string() + &Uuid::new_v4().to_string();
+        let repo_path: PathBuf = [
+            r"/tmp",
+            &tmp_dir_name,
+        ].iter().collect();
         Self {
-            repo_path: "/tmp/setman-tmp-".to_string() + &Uuid::new_v4().to_string(),
+            repo_path,
             git_settings,
         }
     }
@@ -83,7 +87,7 @@ impl GitRepo {
     }
 
     pub fn get_repo_path(&self) -> &str {
-        self.repo_path.as_str()
+        self.repo_path.to_str().unwrap()
     }
 
     pub fn push_changes(self) -> Result<(), Error> {
@@ -102,8 +106,10 @@ impl GitRepo {
                 let tree = repo.find_tree(tree_id)?;
 
                 let parent = self.get_parent_commit(&repo);
-                self.create_commit(&repo, &signature, &tree, &parent)
+                let new_commit_id = self.create_commit(&repo, &signature, &tree, &parent)
                     .unwrap();
+
+                self.save_commit_id(new_commit_id).unwrap();
 
                 let callbacks = self.gen_callbacks();
                 let mut push_opts = PushOptions::new();
@@ -116,7 +122,7 @@ impl GitRepo {
                 logger::print_info("Done!".to_string());
                 Ok(())
             }
-            Err(e) => panic!("Failed to open {} as a git repo: {}", &self.repo_path, e),
+            Err(e) => panic!("Failed to open {} as a git repo: {}", &self.get_repo_path(), e),
         }
     }
 
@@ -126,7 +132,7 @@ impl GitRepo {
         signature: &Signature,
         tree: &Tree,
         parent: &Commit,
-    ) -> Result<(), Error> {
+    ) -> Result<Oid, Error> {
         let commit_msg = readline::read("Enter a commit message").unwrap();
         let pretty_message = git2::message_prettify(commit_msg, None)?;
         let new_commit_id: Oid = match repo.commit(
@@ -144,6 +150,16 @@ impl GitRepo {
             }
         };
         logger::print_info(format!("Created new commit with id: {}", new_commit_id));
+        Ok(new_commit_id)
+    }
+
+    fn save_commit_id(&self, commit_id: Oid) -> std::io::Result<()> {
+        logger::print_job("Saving new commit id".to_string());
+        let commit_id_path = Paths::new().commit_id_path;
+        let file = File::create(commit_id_path)?;
+        let mut file = LineWriter::new(file);
+        file.write_all(commit_id.to_string().as_bytes())?;
+        file.flush()?;
         Ok(())
     }
 
@@ -161,8 +177,8 @@ impl GitRepo {
         callbacks
     }
 
-    fn get_parent_commit<'a>(&self, repo: &'a Repository) -> Commit<'a> {
-        match repo.revparse_single("origin") {
+    pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Commit<'a> {
+        let commit: Commit = match repo.revparse_single("origin") {
             Ok(obj) => obj,
             Err(e) => {
                 eprintln!("Error: {}", e);
@@ -171,7 +187,8 @@ impl GitRepo {
         }
         .as_commit()
         .unwrap()
-        .to_owned()
+        .to_owned();
+        commit
     }
 
     pub fn clone_repo(&mut self) {
@@ -184,15 +201,11 @@ impl GitRepo {
         let mut builder = RepoBuilder::new();
         builder.fetch_options(fetch_opts);
 
-        builder
+        let repo = builder
             .clone(&self.git_settings.upstream_url, Path::new(&self.repo_path))
             .unwrap();
-    }
 
-    pub fn get_latest_change_time(&mut self) -> Time {
-        self.clone_repo();
-        let repo = Repository::open(self.clone().repo_path).unwrap();
-        let commit = self.get_parent_commit(&repo);
-        commit.time()
+        let latest_commit = self.get_parent_commit(&repo);
+        self.save_commit_id(latest_commit.id());
     }
 }

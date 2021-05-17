@@ -9,9 +9,10 @@ use crate::paths;
 use crate::readline;
 
 use fileman::{App, Apps};
+use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
-use std::path::Path;
+use std::{fs, path::Path, time::SystemTime};
 use std::{io::Error, process::exit};
 
 pub enum SetmanAction<'a> {
@@ -30,12 +31,15 @@ pub enum SetmanAction<'a> {
 
 pub fn check_path_existance() {
     let paths = Paths::new();
-    fileman::path_exists(&paths.user_conf_path);
+    fileman::path_exists(&paths.setman_path);
     fileman::path_exists(&paths.settings_path);
 }
 
 pub fn sync_settings(action: SetmanAction) {
-    let settings_path = &Paths::new().settings_path;
+    let settings_path = &Paths::new()
+        .settings_path
+        .to_str()
+        .unwrap();
     let mut gitman = GitRepo::new();
     gitman.clone_repo();
     let repo_path = gitman.get_repo_path();
@@ -88,8 +92,16 @@ pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
 
 fn copy_app_files(app: &App, from_local: bool) {
     let paths = Paths::new();
-    let app_local_path = paths.clone().get_app_path(&app.name);
-    let app_conf_path = paths.clone().get_absolute_path(&app.config_path);
+    let app_local_path = paths
+        .clone()
+        .get_app_path(&app.name)
+        .to_str()
+        .unwrap();
+    let app_conf_path = paths
+        .clone()
+        .get_absolute_path(&app.config_path)
+        .to_str()
+        .unwrap();
     logger::print_job("Found application:".to_string());
     let tmp_app = app.clone();
     logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, false);
@@ -127,8 +139,13 @@ pub fn app_action(action: SetmanAction) {
             logger::print_job(format!("Removing {}", &app_name));
             // remove app from saved list of apps
             apps.remove_app(app_name).unwrap();
+
+            let app_local_path = Paths::new()
+                .get_app_path(&app_name)
+                .to_str()
+                .unwrap();
             // remove the application's files in the local copy of configs
-            fileman::remove_files(&Paths::new().get_app_path(&app_name)).unwrap();
+            fileman::remove_files(app_local_path).unwrap();
             logger::print_info("Done".to_string());
         },
         SetmanAction::New => {
@@ -208,4 +225,21 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
         apps.save_new_app(app)?;
     };
     Ok(())
+}
+
+pub fn compare_upstream() {
+    // get latest commit from upstream and get its id
+    let git_repo = gitman::GitRepo::new();
+    let repo = Repository::open(git_repo.get_repo_path()).unwrap();
+    let commit_id = git_repo
+        .get_parent_commit(&repo)
+        .id()
+        .to_string();
+    // create file that holds the id of the latest commit made from this device.
+
+    // check that file for the commit id and compare that to the latest commit
+    // in upstream
+
+    // if the ids match then the local collection is up to date, otherwise
+    // upstream is ahead
 }
