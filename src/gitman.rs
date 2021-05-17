@@ -8,7 +8,7 @@ use crate::readline;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions,
-    RemoteCallbacks, Repository, Signature, Tree,
+    RemoteCallbacks, Repository, Signature, Tree, Time,
 };
 use paths::Paths;
 use serde::Deserialize;
@@ -187,5 +187,12 @@ impl GitRepo {
         builder
             .clone(&self.git_settings.upstream_url, Path::new(&self.repo_path))
             .unwrap();
+    }
+
+    pub fn get_latest_change_time(&mut self) -> Time {
+        self.clone_repo();
+        let repo = Repository::open(self.clone().repo_path).unwrap();
+        let commit = self.get_parent_commit(&repo);
+        commit.time()
     }
 }
