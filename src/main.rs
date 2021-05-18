@@ -136,6 +136,6 @@ fn get_skipped_apps<'a>(arg_values: Option<Values<'a>>) -> Vec<String> {
                 .map(|names| names.to_string())
                 .collect::<Vec<String>>()
         },
-        None => Vec::<String>::new(),
+        None => vec![],
     }
 }
