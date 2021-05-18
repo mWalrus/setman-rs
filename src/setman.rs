@@ -12,7 +12,7 @@ use fileman::{App, Apps};
 use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
-use std::{fs, path::Path, time::SystemTime};
+use std::path::{Path, PathBuf};
 use std::{io::Error, process::exit};
 
 pub enum SetmanAction<'a> {
@@ -29,37 +29,27 @@ pub enum SetmanAction<'a> {
     SyncDown,
 }
 
-pub fn check_path_existance() {
-    let paths = Paths::new();
-    fileman::path_exists(&paths.setman_path);
-    fileman::path_exists(&paths.settings_path);
-}
-
 pub fn sync_settings(action: SetmanAction) {
-    let settings_path = &Paths::new()
-        .settings_path
-        .to_str()
-        .unwrap();
-    let mut gitman = GitRepo::new();
+    let settings_path = Paths::new().settings_path;
+    let gitman = GitRepo::new();
     gitman.clone_repo();
-    let repo_path = gitman.get_repo_path();
     match action {
         SetmanAction::SyncUp => {
             let dir_names = fileman::get_dir_names_in_path(&settings_path).unwrap();
             let mut apps = Apps::new();
             for dir_name in dir_names {
+                let source = settings_path.with_file_name(&dir_name);
+                let dest = gitman.repo_path.with_file_name(&dir_name);
                 let app = apps.find_app_by_name(&dir_name).unwrap();
-                let source = format!("{}/{}", &settings_path, &app.name);
-                let dest = format!("{}/{}", &repo_path, &app.name);
                 fileman::copy_files(app.file_names, &source, &dest).unwrap();
             }
             gitman.push_changes().unwrap();
         }
         SetmanAction::SyncDown => {
             let dirs_to_copy = gitman.clone().get_dir_names();
-            for dir in dirs_to_copy.clone() {
-                let source = format!("{}/{}", &repo_path, &dir);
-                let dest = format!("{}/{}", &settings_path, &dir);
+            for dir_name in dirs_to_copy.clone() {
+                let source = gitman.repo_path.with_file_name(&dir_name);
+                let dest = settings_path.with_file_name(&dir_name);
                 let files = Path::new(&source).read_dir().unwrap();
                 let file_names = files
                     .into_iter()
@@ -92,24 +82,17 @@ pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
 
 fn copy_app_files(app: &App, from_local: bool) {
     let paths = Paths::new();
-    let app_local_path = paths
+    let app_local_path = &paths
         .clone()
-        .get_app_path(&app.name)
-        .to_str()
-        .unwrap();
-    let app_conf_path = paths
-        .clone()
-        .get_absolute_path(&app.config_path)
-        .to_str()
-        .unwrap();
+        .get_app_path(&app.name);
     logger::print_job("Found application:".to_string());
     let tmp_app = app.clone();
     logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, false);
     if from_local {
-        fileman::copy_files(app.clone().file_names, &app_local_path, &app_conf_path).unwrap();
+        fileman::copy_files(app.clone().file_names, &app_local_path, &app.config_path).unwrap();
         return;
     }
-    fileman::copy_files(app.clone().file_names, &app_conf_path, &app_local_path).unwrap();
+    fileman::copy_files(app.clone().file_names, &app.config_path, &app_local_path).unwrap();
 }
 
 pub fn app_action(action: SetmanAction) {
@@ -141,11 +124,9 @@ pub fn app_action(action: SetmanAction) {
             apps.remove_app(app_name).unwrap();
 
             let app_local_path = Paths::new()
-                .get_app_path(&app_name)
-                .to_str()
-                .unwrap();
+                .get_app_path(&app_name);
             // remove the application's files in the local copy of configs
-            fileman::remove_files(app_local_path).unwrap();
+            fileman::remove_files(&app_local_path).unwrap();
             logger::print_info("Done".to_string());
         },
         SetmanAction::New => {
@@ -203,7 +184,13 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
     let mod_options = vec!["Name", "Config path", "File names"];
     match readline::select(mod_options.clone())? {
         0 => app.name = readline::read("Enter a new name")?,
-        1 => app.config_path = readline::read("Enter a new config path")?,
+        1 => {
+            let rel_path = readline::read("Enter a new config path")?;
+            let config_path = PathBuf::from(
+                Paths::new().get_absolute_path(&rel_path)
+            );
+            app.config_path = config_path;
+        },
         2 => {
             let mut file_names = app.file_names;
             let file_names_str = file_names.iter().map(|n| n.as_str()).collect();
@@ -230,7 +217,7 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
 pub fn compare_upstream() {
     // get latest commit from upstream and get its id
     let git_repo = gitman::GitRepo::new();
-    let repo = Repository::open(git_repo.get_repo_path()).unwrap();
+    let repo = Repository::open(&git_repo.repo_path).unwrap();
     let commit_id = git_repo
         .get_parent_commit(&repo)
         .id()

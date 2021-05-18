@@ -19,7 +19,7 @@ use std::path::PathBuf;
 
 #[derive(Deserialize, Clone)]
 pub struct GitRepo {
-    repo_path: PathBuf,
+    pub repo_path: PathBuf,
     git_settings: GitSettings,
 }
 
@@ -86,11 +86,7 @@ impl GitRepo {
         dirs_names
     }
 
-    pub fn get_repo_path(&self) -> &str {
-        self.repo_path.to_str().unwrap()
-    }
-
-    pub fn push_changes(self) -> Result<(), Error> {
+    pub fn push_changes(&self) -> Result<(), Error> {
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
                 let signature = repo.signature()?;
@@ -105,7 +101,7 @@ impl GitRepo {
                 let tree_id = index.write_tree()?;
                 let tree = repo.find_tree(tree_id)?;
 
-                let parent = self.get_parent_commit(&repo);
+                let parent = self.clone().get_parent_commit(&repo);
                 let new_commit_id = self.create_commit(&repo, &signature, &tree, &parent)
                     .unwrap();
 
@@ -122,7 +118,7 @@ impl GitRepo {
                 logger::print_info("Done!".to_string());
                 Ok(())
             }
-            Err(e) => panic!("Failed to open {} as a git repo: {}", &self.get_repo_path(), e),
+            Err(e) => panic!("Failed to open {:?} as a git repo: {}", &self.repo_path, e),
         }
     }
 
@@ -191,7 +187,7 @@ impl GitRepo {
         commit
     }
 
-    pub fn clone_repo(&mut self) {
+    pub fn clone_repo(&self) {
         logger::print_job("Cloning down from upstream".to_owned());
 
         let callbacks = self.gen_callbacks();
@@ -205,7 +201,7 @@ impl GitRepo {
             .clone(&self.git_settings.upstream_url, Path::new(&self.repo_path))
             .unwrap();
 
-        let latest_commit = self.get_parent_commit(&repo);
+        let latest_commit = self.clone().get_parent_commit(&repo);
         self.save_commit_id(latest_commit.id());
     }
 }

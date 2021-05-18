@@ -28,8 +28,6 @@ use std::process::exit;
 fn main() {
     logger::print_header();
 
-    setman::check_path_existance();
-
     match args::parse_args().subcommand() {
         ("list", Some(sub_m)) => {
             let verbose = match sub_m.subcommand() {
