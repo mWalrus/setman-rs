@@ -47,13 +47,13 @@ pub fn print_app(
     print_info(app_name);
     if verbose {
         println!(
-            "    {} {:#?}",
+            "{:>18} {:?}",
             "Config path =>".bold().bright_cyan(),
             app_config_path
         );
-        println!("    {}", "File names:".bold().bright_green());
+        println!("{:>15}", "File names:".bold().bright_green());
         for file in app_file_names {
-            println!("      {} {}", "=>".bold().bright_green(), file);
+            println!("{:>11} {}", "=>".bold().bright_green(), file);
         }
     }
 }
