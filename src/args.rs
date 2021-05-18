@@ -93,6 +93,12 @@ pub fn parse_args() -> ArgMatches<'static> {
                                 .multiple(true)
                                 .help("App to skip"),
                         ),
+                )
+                .arg(
+                    Arg::with_name("push")
+                    .long("push")
+                    .takes_value(false)
+                    .help("Push directly after save")
                 ),
         )
         .subcommand(

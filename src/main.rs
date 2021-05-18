@@ -101,6 +101,9 @@ fn main() {
                     );
                 },
                 _ => {}
+            };
+            if sub_m.is_present("push") {
+                setman::sync_settings(SetmanAction::SyncUp);
             }
         },
         ("modify", Some(sub_m)) => {
