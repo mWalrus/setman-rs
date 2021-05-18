@@ -170,12 +170,15 @@ impl GitRepo {
         callbacks
     }
 
-    pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Option<&Commit<'a>> {
-        match repo.revparse_single("origin") {
+    pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Option<Commit<'a>> {
+        let commit = match repo.revparse_single("origin") {
             Ok(obj) => obj,
             Err(e) => panic!("Error: {}", e),
         }
         .as_commit()
+        .unwrap()
+        .to_owned();
+        Some(commit)
     }
 
     pub fn clone_repo(&self, save_commit_id: bool) {
