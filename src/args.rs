@@ -140,6 +140,6 @@ pub fn parse_args() -> ArgMatches<'static> {
             ),
         )
         .subcommand(SubCommand::with_name("compare")
-            .about("Checks if upstream has newer content than the local copy"))
+            .about("Checks if upstream is ahead of local save"))
         .get_matches()
 }
