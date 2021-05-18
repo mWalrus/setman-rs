@@ -109,11 +109,11 @@ pub fn copy_files(file_names: Vec<String>, source: &PathBuf, dest: &PathBuf) -> 
     assert!(dest.exists());
     for file in file_names {
         let mut source_path = source.clone();
-        source_path.set_file_name(&file);
+        source_path.push(&file);
         let mut dest_path = dest.clone();
-        dest_path.set_file_name(&file);
+        dest_path.push(&file);
         // check if source file exists before attempting copy
-        assert!(Path::new(&source_path).exists());
+        assert!(source_path.exists());
         fs::copy(source_path, dest_path)?;
         logger::print_info(format!("Copied {} to {:#?}", &file.bold(), &dest));
     }

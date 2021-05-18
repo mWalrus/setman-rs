@@ -187,7 +187,7 @@ impl GitRepo {
         commit
     }
 
-    pub fn clone_repo(&self) {
+    pub fn clone_repo(&self, save_commit_id: bool) {
         logger::print_job("Cloning down from upstream".to_owned());
 
         let callbacks = self.gen_callbacks();
@@ -202,6 +202,8 @@ impl GitRepo {
             .unwrap();
 
         let latest_commit = self.clone().get_parent_commit(&repo);
-        self.save_commit_id(latest_commit.id());
+        if save_commit_id {
+            self.save_commit_id(latest_commit.id()).unwrap();
+        }
     }
 }

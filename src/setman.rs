@@ -12,7 +12,7 @@ use fileman::{App, Apps};
 use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
-use std::path::{Path, PathBuf};
+use std::{fs::File, io::{Read, Write}, path::{Path, PathBuf}};
 use std::{io::Error, process::exit};
 
 pub enum SetmanAction<'a> {
@@ -32,14 +32,16 @@ pub enum SetmanAction<'a> {
 pub fn sync_settings(action: SetmanAction) {
     let settings_path = Paths::new().settings_path;
     let gitman = GitRepo::new();
-    gitman.clone_repo();
+    gitman.clone_repo(true);
     match action {
         SetmanAction::SyncUp => {
             let dir_names = fileman::get_dir_names_in_path(&settings_path).unwrap();
             let mut apps = Apps::new();
             for dir_name in dir_names {
-                let source = settings_path.with_file_name(&dir_name);
-                let dest = gitman.repo_path.with_file_name(&dir_name);
+                let mut source = settings_path.clone();
+                source.push(&dir_name);
+                let mut dest = gitman.repo_path.clone();
+                dest.push(&dir_name);
                 let app = apps.find_app_by_name(&dir_name).unwrap();
                 fileman::copy_files(app.file_names, &source, &dest).unwrap();
             }
@@ -48,8 +50,10 @@ pub fn sync_settings(action: SetmanAction) {
         SetmanAction::SyncDown => {
             let dirs_to_copy = gitman.clone().get_dir_names();
             for dir_name in dirs_to_copy.clone() {
-                let source = gitman.repo_path.with_file_name(&dir_name);
-                let dest = settings_path.with_file_name(&dir_name);
+                let mut source = gitman.repo_path.clone();
+                source.push(&dir_name);
+                let mut dest = settings_path.clone();
+                dest.push(&dir_name);
                 let files = Path::new(&source).read_dir().unwrap();
                 let file_names = files
                     .into_iter()
@@ -217,11 +221,26 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
 pub fn compare_upstream() {
     // get latest commit from upstream and get its id
     let git_repo = gitman::GitRepo::new();
+    git_repo.clone_repo(false);
     let repo = Repository::open(&git_repo.repo_path).unwrap();
     let commit_id = git_repo
         .get_parent_commit(&repo)
         .id()
         .to_string();
+
+    let local_commit_file = Paths::new().commit_id_path;
+    let mut file = match File::open(&local_commit_file) {
+        Ok(file) => file,
+        Err(e) => panic!("Could not open {:#?}: {}", &local_commit_file, e),
+    };
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+
+    if contents.eq(&commit_id.to_string()) {
+        logger::print_info("Local is up-to-date".to_string());
+        return
+    }
+    logger::print_warn("Local is behind".to_string());
     // create file that holds the id of the latest commit made from this device.
 
     // check that file for the commit id and compare that to the latest commit

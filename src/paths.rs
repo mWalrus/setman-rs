@@ -26,13 +26,13 @@ impl Paths {
         settings_path.push("settings");
 
         let mut applist_path = setman_path.clone();
-        applist_path.set_file_name("apps.toml");
+        applist_path.push("apps.toml");
 
         let mut git_config_path = setman_path.clone();
-        git_config_path.set_file_name("git.toml");
+        git_config_path.push("git.toml");
 
         let mut commit_id_path = setman_path.clone();
-        commit_id_path.set_file_name("latest_commit");
+        commit_id_path.push("latest_commit");
 
         Paths {
             setman_path,
