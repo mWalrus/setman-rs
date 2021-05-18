@@ -12,7 +12,7 @@ use git2::{
 };
 use paths::Paths;
 use serde::Deserialize;
-use std::{fs::File, io::{LineWriter, Write}, process::exit};
+use std::{fs::File, io::{LineWriter, Write}};
 use std::{fs, path::Path};
 use uuid::Uuid;
 use std::path::PathBuf;
@@ -48,7 +48,7 @@ impl GitSettings {
                 pass: settings.pass,
             },
             Err(e) => {
-                panic!("Could not parse {}. Error: {}", git_config_path.to_str().unwrap(), e);
+                panic!("Could not parse {:?}. Error: {}", &git_config_path, e);
             }
         }
     }
@@ -101,7 +101,7 @@ impl GitRepo {
                 let tree_id = index.write_tree()?;
                 let tree = repo.find_tree(tree_id)?;
 
-                let parent = self.clone().get_parent_commit(&repo);
+                let parent = self.clone().get_parent_commit(&repo).unwrap();
                 let new_commit_id = self.create_commit(&repo, &signature, &tree, &parent)
                     .unwrap();
 
@@ -140,10 +140,7 @@ impl GitRepo {
             &[parent],
         ) {
             Ok(commit) => commit,
-            Err(e) => {
-                println!("Failed to create commit: {}", e);
-                exit(0);
-            }
+            Err(e) => panic!("Failed to create commit: {}", e),
         };
         logger::print_info(format!("Created new commit with id: {}", new_commit_id));
         Ok(new_commit_id)
@@ -173,18 +170,12 @@ impl GitRepo {
         callbacks
     }
 
-    pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Commit<'a> {
-        let commit: Commit = match repo.revparse_single("origin") {
+    pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Option<&Commit<'a>> {
+        match repo.revparse_single("origin") {
             Ok(obj) => obj,
-            Err(e) => {
-                eprintln!("Error: {}", e);
-                exit(0)
-            }
+            Err(e) => panic!("Error: {}", e),
         }
         .as_commit()
-        .unwrap()
-        .to_owned();
-        commit
     }
 
     pub fn clone_repo(&self, save_commit_id: bool) {
@@ -201,7 +192,7 @@ impl GitRepo {
             .clone(&self.git_settings.upstream_url, Path::new(&self.repo_path))
             .unwrap();
 
-        let latest_commit = self.clone().get_parent_commit(&repo);
+        let latest_commit = self.clone().get_parent_commit(&repo).unwrap();
         if save_commit_id {
             self.save_commit_id(latest_commit.id()).unwrap();
         }

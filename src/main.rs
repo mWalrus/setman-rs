@@ -21,7 +21,6 @@ mod setman;
 
 use clap::Values;
 use setman::SetmanAction;
-use std::process::exit;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
 
@@ -126,7 +125,7 @@ fn main() {
         ("compare", Some(_sub_m)) => {
             setman::compare_upstream();
         },
-        _ => exit(0),
+        _ => panic!("Invalid option"),
     }
 }
 

@@ -10,7 +10,6 @@ use colored::*;
 use paths::Paths;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
-use std::process::exit;
 use std::{io::Result, path::Path};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -40,10 +39,7 @@ impl Apps {
     pub fn new() -> Apps {
         let file_content: String = match fs::read_to_string(Paths::new().applist_path) {
             Ok(content) => content,
-            Err(e) => {
-                println!("Error opening file: {}", e);
-                exit(0);
-            }
+            Err(e) => panic!("Error opening file: {}", e),
         };
 
         match toml::from_str::<Apps>(&file_content) {
@@ -56,11 +52,10 @@ impl Apps {
         let pos: usize = match self.items.iter().position(|i| i.name == app_name) {
             Some(pos) => pos,
             None => {
-                logger::print_warn(format!(
+                panic!(
                     "Application with name '{}' could not be found",
                     &app_name
-                ));
-                exit(0);
+                )
             }
         };
         Some(self.items.get(pos)?.clone())
@@ -69,8 +64,7 @@ impl Apps {
     pub fn save_new_app(&mut self, app: App) -> Result<()> {
         for app_item in self.items.clone() {
             if app_item.name.eq(&app.name) {
-                logger::print_warn("An app with that name already exists".to_string());
-                return Ok(());
+                panic!("An app with that name already exists");
             }
         }
         self.items.push(app);
@@ -115,7 +109,7 @@ pub fn copy_files(file_names: Vec<String>, source: &PathBuf, dest: &PathBuf) -> 
         // check if source file exists before attempting copy
         assert!(source_path.exists());
         fs::copy(source_path, dest_path)?;
-        logger::print_info(format!("Copied {} to {:#?}", &file.bold(), &dest));
+        logger::print_info(format!("Copied {} to {:?}", &file.bold(), &dest));
     }
     Ok(())
 }
@@ -126,7 +120,7 @@ pub fn remove_files(conf_path: &PathBuf) -> Result<()> {
     for file in files {
         let file_path = file?.path();
         logger::print_info(
-            format!("Removing file {}", &file_path.display().to_string())
+            format!("Removing file {:?}", &file_path)
         );
         fs::remove_file(&file_path)?;
     }

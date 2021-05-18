@@ -13,7 +13,7 @@ use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
 use std::{fs::File, io::Read, path::{Path, PathBuf}};
-use std::{io::Error, process::exit};
+use std::io::Error;
 
 pub enum SetmanAction<'a> {
     Install(&'a str),
@@ -62,10 +62,7 @@ pub fn sync_settings(action: SetmanAction) {
                 fileman::copy_files(file_names, &source, &dest).unwrap();
             }
         }
-        _ => {
-            println!("Invalid option, exiting.");
-            exit(0);
-        }
+        _ => println!("Invalid option, exiting."),
     }
 }
 
@@ -143,10 +140,7 @@ pub fn app_action(action: SetmanAction) {
             let mut apps = Apps::new();
             apps.save_new_app(App::new(app_name, app_config_path, files_names)).unwrap();
         },
-        _ => {
-            println!("Invalid option, exiting.");
-            exit(0);
-        }
+        _ => panic!("Invalid option, exiting."),
     }
 }
 
@@ -173,10 +167,7 @@ pub fn all_apps_action(action: SetmanAction) {
                     copy_app_files(app, false)
                 }
             },
-            _ => {
-                println!("Invalid option, exiting");
-                exit(0);
-            }
+            _ => println!("Invalid option, exiting"),
         };
     }
 
@@ -205,10 +196,7 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
             file_names.insert(file_index, new_file_name);
             app.file_names = file_names;
         }
-        _ => {
-            logger::print_warn("Invalid option, exiting.".to_owned());
-            exit(0);
-        }
+        _ => panic!("Invalid option, exiting."),
     }
     // make sure user wants to modify the application
     if readline::are_you_sure("modify ".to_owned() + &app_name)? {
@@ -225,13 +213,14 @@ pub fn compare_upstream() {
     let repo = Repository::open(&git_repo.repo_path).unwrap();
     let commit_id = git_repo
         .get_parent_commit(&repo)
+        .unwrap()
         .id()
         .to_string();
 
     let local_commit_file = Paths::new().commit_id_path;
     let mut file = match File::open(&local_commit_file) {
         Ok(file) => file,
-        Err(e) => panic!("Could not open {:#?}: {}", &local_commit_file, e),
+        Err(e) => panic!("Could not open {:?}: {}", &local_commit_file, e),
     };
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
@@ -241,11 +230,4 @@ pub fn compare_upstream() {
         return
     }
     logger::print_warn("Local is behind".to_string());
-    // create file that holds the id of the latest commit made from this device.
-
-    // check that file for the commit id and compare that to the latest commit
-    // in upstream
-
-    // if the ids match then the local collection is up to date, otherwise
-    // upstream is ahead
 }
