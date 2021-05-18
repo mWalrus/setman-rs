@@ -1,6 +1,6 @@
 [package]
 name = "setman"
-version = "1.1.0"
+version = "1.5.0"
 authors = ["mWalrus <hellkvistoskar@protonmail.com>"]
 edition = "2018"
 description = "Settings manager for various applications"
