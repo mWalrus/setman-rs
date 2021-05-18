@@ -6,6 +6,7 @@
 - [x] DRY (mostly done)
 - [ ] SSH authentication (gitlab)
 - [ ] Compare local files to upstream
+- [ ] Add step about creating upstream repo in README
 
 ### Comparing upstream to local
 the locally stored commit id is different from last change to upstream
