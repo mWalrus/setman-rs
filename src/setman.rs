@@ -12,7 +12,7 @@ use fileman::{App, Apps};
 use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
-use std::{fs::File, io::{Read, Write}, path::{Path, PathBuf}};
+use std::{fs::File, io::Read, path::{Path, PathBuf}};
 use std::{io::Error, process::exit};
 
 pub enum SetmanAction<'a> {
