@@ -22,6 +22,7 @@ mod setman;
 
 use clap::Values;
 use setman::SetmanAction;
+use setman::ListOptions;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
 
@@ -34,12 +35,16 @@ fn main() {
                 ("verbose", Some(_s)) => true,
                 _ => false,
             };
+
             let regex = match sub_m.is_present("regex") {
-                true => Some(vec![sub_m.value_of("regex").unwrap()]),
+                true => Some(sub_m.value_of("regex").unwrap()),
                 false => None,
             };
-            setman::print_app_list(regex.clone(), verbose, true);
-            if regex.ne(&None) { return }
+            if regex.ne(&None) {
+                setman::print_app_list(ListOptions::Regex(regex.unwrap()), verbose);
+                return;
+            }
+
             let app_names = match sub_m.is_present("app") {
                 true => {
                     let values = sub_m.values_of("app").unwrap();
@@ -47,7 +52,7 @@ fn main() {
                 }
                 false => None,
             };
-            setman::print_app_list(app_names, verbose, false);
+            setman::print_app_list(ListOptions::Literal(&app_names), verbose);
         }
         ("install", Some(sub_m)) => {
             match sub_m.subcommand() {

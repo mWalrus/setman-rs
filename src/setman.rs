@@ -29,6 +29,11 @@ pub enum SetmanAction<'a> {
     SyncDown,
 }
 
+pub enum ListOptions<'a> {
+    Literal(&'a Option<Vec<&'a str>>),
+    Regex(&'a str),
+}
+
 pub fn sync_settings(action: SetmanAction) {
     let settings_path = Paths::new().settings_path;
     let gitman = GitRepo::new();
@@ -66,28 +71,34 @@ pub fn sync_settings(action: SetmanAction) {
     }
 }
 
-pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool, regex: bool) {
+pub fn print_app_list(option: ListOptions, verbose: bool) {
     logger::print_job("Applications:".to_string());
 
     let mut apps = Apps::new();
-    if regex {
-        let found_apps = apps.find_apps_from_regex(
-            app_names.unwrap().get(0).unwrap()
-        );
-        for app in found_apps.unwrap() {
-            logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
+    match option {
+        ListOptions::Literal(app_names) => {
+            match app_names {
+                Some(names) => {
+                    for name in names {
+                        let app = apps.find_app_by_name(name).unwrap();
+                        logger::print_app(&app.name, &app.config_path, &app.file_names, verbose)
+                    }
+                },
+                None => {
+                    for app in apps.items {
+                        logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
+                    }
+                }
+            }
+        },
+        ListOptions::Regex(regex) => {
+            let found_apps = apps.find_apps_from_regex(
+                regex
+            );
+            for app in found_apps.unwrap() {
+                logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
+            }
         }
-        return;
-    }
-    if app_names != None {
-        for name in app_names.unwrap() {
-            let app = apps.find_app_by_name(&name).unwrap();
-            logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
-        }
-        return;
-    }
-    for app in apps.items {
-        logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
     }
 }
 
