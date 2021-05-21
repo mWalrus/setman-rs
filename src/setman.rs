@@ -66,18 +66,28 @@ pub fn sync_settings(action: SetmanAction) {
     }
 }
 
-pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool) {
+pub fn print_app_list(app_names: Option<Vec<&str>>, verbose: bool, regex: bool) {
     logger::print_job("Applications:".to_string());
+
     let mut apps = Apps::new();
+    if regex {
+        let found_apps = apps.find_apps_from_regex(
+            app_names.unwrap().get(0).unwrap()
+        );
+        for app in found_apps.unwrap() {
+            logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
+        }
+        return;
+    }
     if app_names != None {
         for name in app_names.unwrap() {
             let app = apps.find_app_by_name(&name).unwrap();
-            logger::print_app(app.name, app.config_path, app.file_names, verbose);
+            logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
         }
         return;
     }
     for app in apps.items {
-        logger::print_app(app.name, app.config_path, app.file_names, verbose);
+        logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
     }
 }
 
@@ -88,7 +98,7 @@ fn copy_app_files(app: &App, from_local: bool) {
         .get_app_path(&app.name);
     logger::print_job("Found application:".to_string());
     let tmp_app = app.clone();
-    logger::print_app(tmp_app.name, tmp_app.config_path, tmp_app.file_names, false);
+    logger::print_app(&tmp_app.name, &tmp_app.config_path, &tmp_app.file_names, false);
     if from_local {
         fileman::copy_files(app.clone().file_names, &app_local_path, &app.config_path).unwrap();
         return;

@@ -14,10 +14,17 @@ pub fn parse_args() -> ArgMatches<'static> {
                 .about("Lists all applications")
                 .arg(
                     Arg::with_name("app")
-                        .help("Application to list")
+                        .help("Application(s) to list")
                         .multiple(true),
                 )
-                .subcommand(SubCommand::with_name("verbose").help("Print verbose list")),
+                .subcommand(SubCommand::with_name("verbose").help("Print verbose list"))
+                .arg(
+                    Arg::with_name("regex")
+                    .help("Regex search")
+                    .short("r")
+                    .long("regex")
+                    .takes_value(true)
+                ),
         )
         .subcommand(
             SubCommand::with_name("install")

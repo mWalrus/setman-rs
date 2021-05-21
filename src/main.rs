@@ -10,6 +10,7 @@ extern crate home;
 extern crate serde;
 extern crate toml;
 extern crate uuid;
+extern crate regex;
 
 mod args;
 mod fileman;
@@ -33,6 +34,12 @@ fn main() {
                 ("verbose", Some(_s)) => true,
                 _ => false,
             };
+            let regex = match sub_m.is_present("regex") {
+                true => Some(vec![sub_m.value_of("regex").unwrap()]),
+                false => None,
+            };
+            setman::print_app_list(regex.clone(), verbose, true);
+            if regex.ne(&None) { return }
             let app_names = match sub_m.is_present("app") {
                 true => {
                     let values = sub_m.values_of("app").unwrap();
@@ -40,8 +47,7 @@ fn main() {
                 }
                 false => None,
             };
-
-            setman::print_app_list(app_names, verbose);
+            setman::print_app_list(app_names, verbose, false);
         }
         ("install", Some(sub_m)) => {
             match sub_m.subcommand() {

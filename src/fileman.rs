@@ -5,12 +5,14 @@
 use crate::colored;
 use crate::logger;
 use crate::paths;
+use crate::regex;
 
 use colored::*;
 use paths::Paths;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 use std::{io::Result, path::Path};
+use regex::Regex;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Apps {
@@ -59,6 +61,12 @@ impl Apps {
             }
         };
         Some(self.items.get(pos)?.clone())
+    }
+
+    pub fn find_apps_from_regex<'a>(&'a self, regex: &str) -> Option<Vec<&App>> {
+        let re = Regex::new(regex).unwrap();
+        let apps = self.items.iter().filter(|app| re.is_match(&app.name)).collect();
+        Some(apps)
     }
 
     pub fn save_new_app(&mut self, app: App) -> Result<()> {

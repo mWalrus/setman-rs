@@ -39,12 +39,12 @@ pub fn print_new_app_header() {
 }
 
 pub fn print_app(
-    app_name: String,
-    app_config_path: PathBuf,
-    app_file_names: Vec<String>,
+    app_name: &str,
+    app_config_path: &PathBuf,
+    app_file_names: &Vec<String>,
     verbose: bool,
 ) {
-    print_info(app_name);
+    print_info(app_name.to_string());
     if verbose {
         println!(
             "{:>18} {:?}",
