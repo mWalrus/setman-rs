@@ -103,18 +103,15 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
 }
 
 fn copy_app_files(app: &App, from_local: bool) {
-    let paths = Paths::new();
-    let app_local_path = &paths
-        .clone()
-        .get_app_path(&app.name);
+    let local_path = &Paths::new().get_app_path(&app.name);
     logger::print_job("Found application:".to_string());
     let tmp_app = app.clone();
     logger::print_app(&tmp_app.name, &tmp_app.config_path, &tmp_app.file_names, false);
     if from_local {
-        fileman::copy_files(app.clone().file_names, &app_local_path, &app.config_path).unwrap();
+        fileman::copy_files(app.clone().file_names, local_path, &app.config_path).unwrap();
         return;
     }
-    fileman::copy_files(app.clone().file_names, &app.config_path, &app_local_path).unwrap();
+    fileman::copy_files(app.clone().file_names, &app.config_path, local_path).unwrap();
 }
 
 pub fn app_action(action: SetmanAction) {

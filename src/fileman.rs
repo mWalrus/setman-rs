@@ -106,7 +106,7 @@ pub fn get_dir_names_in_path(dir_path: &PathBuf) -> Result<Vec<String>> {
 }
 
 pub fn copy_files(file_names: Vec<String>, source: &PathBuf, dest: &PathBuf) -> Result<()> {
-    logger::print_job(format!("Copying files from {:#?}", source));
+    logger::print_job(format!("Copying files from {:?}", source));
     assert!(source.exists());
     assert!(dest.exists());
     for file in file_names {
