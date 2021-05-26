@@ -37,7 +37,10 @@ impl GitSettings {
         let file_content = match fs::read_to_string(&git_config_path) {
             Ok(content) => content,
             Err(_e) => {
-                panic!("File {} not found, exiting", git_config_path.to_str().unwrap());
+                panic!(
+                    "File {} not found, exiting",
+                    git_config_path.to_str().unwrap()
+                );
             }
         };
         match toml::from_str::<Self>(&file_content) {
@@ -102,7 +105,11 @@ impl GitRepo {
                 let tree = repo.find_tree(tree_id)?;
 
                 let parent = self.clone().get_parent_commit(&repo).unwrap();
-                let new_commit_id = self.create_commit(&repo, &signature, &tree, &parent)
+                let new_commit_id = self.create_commit(
+                    &repo,
+                    &signature,
+                    &tree,
+                    &parent)
                     .unwrap();
 
                 self.save_commit_id(new_commit_id).unwrap();
@@ -118,7 +125,10 @@ impl GitRepo {
                 logger::print_info("Done!".to_string());
                 Ok(())
             }
-            Err(e) => panic!("Failed to open {:?} as a git repo: {}", &self.repo_path, e),
+            Err(e) => panic!(
+                "Failed to open {:?} as a git repo: {}",
+                &self.repo_path,
+                e),
         }
     }
 

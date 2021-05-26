@@ -28,7 +28,8 @@ pub struct App {
 
 impl App {
     pub fn new(name: String, config_path: String, file_names: Vec<String>) -> App {
-        let config_path = Paths::new().get_absolute_path(&config_path);
+        let config_path = Paths::new()
+            .get_absolute_path(&config_path);
         App {
             name,
             config_path,
@@ -51,7 +52,9 @@ impl Apps {
     }
 
     pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> Option<App> {
-        let pos: usize = match self.items.iter().position(|i| i.name == app_name) {
+        let pos: usize = match self.items
+                .iter()
+                .position(|i| i.name == app_name) {
             Some(pos) => pos,
             None => {
                 panic!(
@@ -65,7 +68,10 @@ impl Apps {
 
     pub fn find_apps_from_regex<'a>(&'a self, regex: &str) -> Option<Vec<&App>> {
         let re = Regex::new(regex).unwrap();
-        let apps = self.items.iter().filter(|app| re.is_match(&app.name)).collect();
+        let apps = self.items
+            .iter()
+            .filter(|app| re.is_match(&app.name))
+            .collect();
         Some(apps)
     }
 
@@ -99,13 +105,22 @@ pub fn get_dir_names_in_path(dir_path: &PathBuf) -> Result<Vec<String>> {
     for e in read {
         let entry = e?;
         if entry.path().is_dir() {
-            result.push(entry.file_name().to_str().unwrap().to_string());
+            result.push(
+                entry.file_name()
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+            );
         }
     }
     Ok(result)
 }
 
-pub fn copy_files(file_names: Vec<String>, source: &PathBuf, dest: &PathBuf) -> Result<()> {
+pub fn copy_files(
+    file_names: Vec<String>,
+    source: &PathBuf,
+    dest: &PathBuf
+) -> Result<()> {
     logger::print_job(format!("Copying files from {:?}", source));
     assert!(source.exists());
     assert!(dest.exists());
@@ -117,13 +132,17 @@ pub fn copy_files(file_names: Vec<String>, source: &PathBuf, dest: &PathBuf) -> 
         // check if source file exists before attempting copy
         assert!(source_path.exists());
         fs::copy(source_path, dest_path)?;
-        logger::print_info(format!("Copied {} to {:?}", &file.bold(), &dest));
+        logger::print_info(
+            format!("Copied {} to {:?}", &file.bold(), &dest)
+        );
     }
     Ok(())
 }
 
 pub fn remove_files(conf_path: &PathBuf) -> Result<()> {
-    logger::print_job(format!("Removing files in {:#?}", &conf_path));
+    logger::print_job(
+        format!("Removing files in {:#?}", &conf_path)
+    );
     let files = fs::read_dir(conf_path)?;
     for file in files {
         let file_path = file?.path();

@@ -206,7 +206,10 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
         },
         2 => {
             let mut file_names = app.file_names;
-            let file_names_str = file_names.iter().map(|n| n.as_str()).collect();
+            let file_names_str = file_names
+                .iter()
+                .map(|s| &**s)
+                .collect();
             let file_index: usize = readline::select(file_names_str)?;
 
             let new_file_name = readline::read("Enter a new file name")?;
@@ -244,7 +247,7 @@ pub fn compare_upstream() {
     file.read_to_string(&mut contents).unwrap();
 
     if contents.eq(&commit_id.to_string()) {
-        logger::print_info("Local is up-to-date".to_string());
+        logger::print_info("Local is up to date".to_string());
         return
     }
     logger::print_warn("Local is behind".to_string());
