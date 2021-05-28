@@ -6,6 +6,7 @@ use crate::colored;
 use crate::logger;
 use crate::paths;
 use crate::regex;
+use crate::thiserror;
 
 use colored::*;
 use paths::Paths;
@@ -13,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 use std::{io::Result, path::Path};
 use regex::Regex;
+use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Apps {
@@ -24,6 +26,19 @@ pub struct App {
     pub name: String,
     pub config_path: PathBuf,
     pub file_names: Vec<String>,
+}
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("An application with name '{0}' could not be found.")]
+    NotFound(String),
+    #[error("An application with that name already exists")]
+    Duplicate,
+    #[error("Failed to read from file")]
+    FileError {
+        #[from]
+        source: std::io::Error,
+    }
 }
 
 impl App {
@@ -42,7 +57,7 @@ impl Apps {
     pub fn new() -> Apps {
         let file_content: String = match fs::read_to_string(Paths::new().applist_path) {
             Ok(content) => content,
-            Err(e) => panic!("Error opening file: {}", e),
+            Err(e) => panic!("{}", AppError::FileError { source: e }),
         };
 
         match toml::from_str::<Apps>(&file_content) {
@@ -57,10 +72,7 @@ impl Apps {
                 .position(|i| i.name == app_name) {
             Some(pos) => pos,
             None => {
-                panic!(
-                    "Application with name '{}' could not be found",
-                    &app_name
-                )
+                panic!("{}", AppError::NotFound(app_name.to_string()))
             }
         };
         Some(self.items.get(pos)?.clone())
@@ -78,7 +90,7 @@ impl Apps {
     pub fn save_new_app(&mut self, app: App) -> Result<()> {
         for app_item in self.items.clone() {
             if app_item.name.eq(&app.name) {
-                panic!("An app with that name already exists");
+                panic!("{}", AppError::Duplicate);
             }
         }
         self.items.push(app);

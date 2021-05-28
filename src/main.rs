@@ -11,6 +11,7 @@ extern crate serde;
 extern crate toml;
 extern crate uuid;
 extern crate regex;
+extern crate thiserror;
 
 mod args;
 mod fileman;
