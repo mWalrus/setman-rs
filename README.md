@@ -32,3 +32,7 @@ If you chose to omit the password field you will be prompted for it during runti
 
 ## Usage
 After the setup process is complete you can run `setman help` to view the help page for setman.
+
+## Disclaimer
+This is my first rust project so code might not be idiomatic.
+Feel free to open an issue with ideas on how to improve or submit a pull-request! :)
