@@ -230,7 +230,7 @@ pub fn modify_application(app_name: &str) -> Result<(), IOError> {
         _ => panic!("{}", SetManError::InvalidOption),
     }
     // make sure user wants to modify the application
-    if readline::are_you_sure("modify ".to_owned() + &app_name)? {
+    if readline::are_you_sure("modify ".to_owned() + app_name)? {
         apps.remove_app(app_name)?;
         apps.save_new_app(app)?;
     };
@@ -256,7 +256,7 @@ pub fn compare_upstream() {
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
 
-    if contents.eq(&commit_id.to_string()) {
+    if contents.eq(&commit_id) {
         logger::print_info("Local is up to date");
         return
     }

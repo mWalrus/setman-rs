@@ -32,10 +32,7 @@ fn main() {
 
     match args::parse_args().subcommand() {
         ("list", Some(sub_m)) => {
-            let verbose = match sub_m.subcommand() {
-                ("verbose", Some(_s)) => true,
-                _ => false,
-            };
+            let verbose = matches!(sub_m.subcommand(), ("verbose", Some(_s)));
 
             let regex = match sub_m.is_present("regex") {
                 true => Some(sub_m.value_of("regex").unwrap()),
@@ -141,7 +138,7 @@ fn main() {
     }
 }
 
-fn get_skipped_apps<'a>(arg_values: Option<Values<'a>>) -> Vec<String> {
+fn get_skipped_apps(arg_values: Option<Values<'_>>) -> Vec<String> {
     match arg_values {
         Some(app_names) => {
             app_names

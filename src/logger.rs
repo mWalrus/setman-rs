@@ -2,7 +2,7 @@
 
 // SPDX-License-Identifier: BSD-2-Clause
 
-use std::path::PathBuf;
+use std::path::Path;
 
 use colored::*;
 
@@ -40,8 +40,8 @@ pub fn print_new_app_header() {
 
 pub fn print_app(
     app_name: &str,
-    app_config_path: &PathBuf,
-    app_file_names: &Vec<String>,
+    app_config_path: &Path,
+    app_file_names: &[String],
     verbose: bool,
 ) {
     print_info(app_name);

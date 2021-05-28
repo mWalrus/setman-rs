@@ -181,7 +181,7 @@ impl GitRepo {
         Ok(())
     }
 
-    fn gen_callbacks<'a>(&'a self) -> RemoteCallbacks<'a> {
+    fn gen_callbacks(&'_ self) -> RemoteCallbacks<'_> {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
             //let password = readline::password("Enter your git password").unwrap();
@@ -195,7 +195,7 @@ impl GitRepo {
         callbacks
     }
 
-    pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Option<Commit<'a>> {
+    pub fn get_parent_commit(self, repo: &'_ Repository) -> Option<Commit<'_>> {
         let commit = match repo.revparse_single("origin") {
             Ok(obj) => obj,
             Err(e) => panic!("{}", GitError::RevParseError(e)),

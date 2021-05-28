@@ -77,7 +77,7 @@ impl Apps {
         }
     }
 
-    pub fn find_app_by_name<'a>(&'a mut self, app_name: &str) -> Option<App> {
+    pub fn find_app_by_name(&'_ mut self, app_name: &str) -> Option<App> {
         let pos: usize = match self.items
                 .iter()
                 .position(|i| i.name == app_name) {
@@ -122,7 +122,7 @@ impl Apps {
     }
 }
 
-pub fn get_dir_names_in_path(dir_path: &PathBuf) -> IOResult<Vec<String>> {
+pub fn get_dir_names_in_path(dir_path: &Path) -> IOResult<Vec<String>> {
     let read = Path::new(dir_path).read_dir()?;
     let mut result: Vec<String> = Vec::new();
     for e in read {
@@ -141,16 +141,16 @@ pub fn get_dir_names_in_path(dir_path: &PathBuf) -> IOResult<Vec<String>> {
 
 pub fn copy_files(
     file_names: Vec<String>,
-    source: &PathBuf,
-    dest: &PathBuf
+    source: &Path,
+    dest: &Path
 ) -> IOResult<()> {
     logger::print_job(&format!("Copying files from {:?}", source));
     assert!(source.exists());
     assert!(dest.exists());
     for file in file_names {
-        let mut source_path = source.clone();
+        let mut source_path = source.to_path_buf();
         source_path.push(&file);
-        let mut dest_path = dest.clone();
+        let mut dest_path = dest.to_path_buf();
         dest_path.push(&file);
         // check if source file exists before attempting copy
         assert!(source_path.exists());
@@ -162,7 +162,7 @@ pub fn copy_files(
     Ok(())
 }
 
-pub fn remove_files(conf_path: &PathBuf) -> IOResult<()> {
+pub fn remove_files(conf_path: &Path) -> IOResult<()> {
     logger::print_job(
         &format!("Removing files in {:#?}", &conf_path)
     );
