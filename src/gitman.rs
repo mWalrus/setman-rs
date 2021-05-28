@@ -5,6 +5,7 @@
 use crate::logger;
 use crate::paths;
 use crate::readline;
+use crate::thiserror;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions,
@@ -16,6 +17,7 @@ use std::{fs::File, io::{LineWriter, Write}};
 use std::{fs, path::Path};
 use uuid::Uuid;
 use std::path::PathBuf;
+use thiserror::Error;
 
 #[derive(Deserialize, Clone)]
 pub struct GitRepo {
@@ -29,6 +31,18 @@ struct GitSettings {
     name: String,
     email: String,
     pass: Option<String>,
+}
+
+#[derive(Error, Debug)]
+enum GitError {
+    #[error("Failed to open {0} as repository: {1}")]
+    RepoOpen(PathBuf, git2::Error),
+    #[error("Failed to create commit: {0}")]
+    CreateCommit(git2::Error),
+    #[error("Failed to get parent commit: {0}")]
+    RevParseError(git2::Error),
+    #[error("Failed to get repo index")]
+    GetIndexErr
 }
 
 impl GitSettings {
@@ -93,7 +107,10 @@ impl GitRepo {
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
                 let signature = repo.signature()?;
-                let mut index = repo.index().expect("Failed to get repo index");
+                let mut index = match repo.index() {
+                    Ok(ind) => ind,
+                    Err(_e) => panic!("{}", GitError::GetIndexErr),
+                };
 
                 // git add .
                 logger::print_job("Staging files for commit".to_string());
@@ -125,10 +142,7 @@ impl GitRepo {
                 logger::print_info("Done!".to_string());
                 Ok(())
             }
-            Err(e) => panic!(
-                "Failed to open {:?} as a git repo: {}",
-                &self.repo_path,
-                e),
+            Err(e) => panic!("{}", GitError::RepoOpen(self.clone().repo_path, e)),
         }
     }
 
@@ -150,7 +164,7 @@ impl GitRepo {
             &[parent],
         ) {
             Ok(commit) => commit,
-            Err(e) => panic!("Failed to create commit: {}", e),
+            Err(e) => panic!("{}", GitError::CreateCommit(e)),
         };
         logger::print_info(format!("Created new commit with id: {}", new_commit_id));
         Ok(new_commit_id)
@@ -183,7 +197,7 @@ impl GitRepo {
     pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Option<Commit<'a>> {
         let commit = match repo.revparse_single("origin") {
             Ok(obj) => obj,
-            Err(e) => panic!("Error: {}", e),
+            Err(e) => panic!("{}", GitError::RevParseError(e)),
         }
         .as_commit()
         .unwrap()
