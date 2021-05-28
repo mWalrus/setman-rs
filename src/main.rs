@@ -22,7 +22,7 @@ mod readline;
 mod setman;
 
 use clap::Values;
-use setman::SetmanAction;
+use setman::SetManAction;
 use setman::ListOptions;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
@@ -59,14 +59,14 @@ fn main() {
             match sub_m.subcommand() {
                 ("app", Some(app_subcommand)) => {
                     setman::app_action(
-                        SetmanAction::Install(
+                        SetManAction::Install(
                             app_subcommand.value_of("application").unwrap()
                         )
                     );
                 },
                 ("all", Some(all_subcommand)) => {
                     setman::all_apps_action(
-                        SetmanAction::InstallAll(
+                        SetManAction::InstallAll(
                             &get_skipped_apps(all_subcommand.values_of("skip"))
                         )
                     )
@@ -78,14 +78,14 @@ fn main() {
             match sub_m.subcommand() {
                 ("app", Some(app_subcommand)) => {
                     setman::app_action(
-                        SetmanAction::Uninstall(
+                        SetManAction::Uninstall(
                             app_subcommand.value_of("application").unwrap()
                         )
                     );
                 },
                 ("all", Some(all_subcommand)) => {
                     setman::all_apps_action(
-                        SetmanAction::UninstallAll(
+                        SetManAction::UninstallAll(
                             &get_skipped_apps(all_subcommand.values_of("skip"))
                         )
                     );
@@ -97,14 +97,14 @@ fn main() {
             match sub_m.subcommand() {
                 ("app", Some(app_subcommand)) => {
                     setman::app_action(
-                        SetmanAction::Save(
+                        SetManAction::Save(
                             app_subcommand.value_of("application").unwrap()
                         )
                     );
                 },
                 ("all", Some(all_subcommand)) => {
                     setman::all_apps_action(
-                        SetmanAction::SaveAll(
+                        SetManAction::SaveAll(
                             &get_skipped_apps(all_subcommand.values_of("skip"))
                         )
                     );
@@ -112,26 +112,26 @@ fn main() {
                 _ => {}
             };
             if sub_m.is_present("push") {
-                setman::sync_settings(SetmanAction::SyncUp);
+                setman::sync_settings(SetManAction::SyncUp);
             }
         },
         ("modify", Some(sub_m)) => {
             let app_name = sub_m.value_of("app").unwrap();
-            setman::app_action(SetmanAction::Modify(&app_name));
+            setman::app_action(SetManAction::Modify(&app_name));
         }
         ("remove", Some(sub_m)) => {
             let app_name = sub_m.value_of("app").unwrap();
-            setman::app_action(SetmanAction::Remove(&app_name));
+            setman::app_action(SetManAction::Remove(&app_name));
         }
-        ("new", Some(_sub_m)) => setman::app_action(SetmanAction::New),
+        ("new", Some(_sub_m)) => setman::app_action(SetManAction::New),
         ("sync", Some(sub_m)) => {
             let direction = sub_m
                 .value_of("direction")
                 .unwrap()
                 .to_lowercase();
             match direction.eq("up") {
-                true => setman::sync_settings(SetmanAction::SyncUp),
-                false => setman::sync_settings(SetmanAction::SyncDown),
+                true => setman::sync_settings(SetManAction::SyncUp),
+                false => setman::sync_settings(SetManAction::SyncDown),
             };
         },
         ("compare", Some(_sub_m)) => {

@@ -7,15 +7,17 @@ use crate::gitman;
 use crate::logger;
 use crate::paths;
 use crate::readline;
+use crate::thiserror;
 
 use fileman::{App, Apps};
 use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
 use std::{fs::File, io::Read, path::{Path, PathBuf}};
-use std::io::Error;
+use std::io::Error as IOError;
+use thiserror::Error;
 
-pub enum SetmanAction<'a> {
+pub enum SetManAction<'a> {
     Install(&'a str),
     Uninstall(&'a str),
     Save(&'a str),
@@ -34,12 +36,18 @@ pub enum ListOptions<'a> {
     Regex(&'a str),
 }
 
-pub fn sync_settings(action: SetmanAction) {
-    let settings_path = Paths::new().settings_path;
+#[derive(Error, Debug)]
+pub enum SetManError {
+    #[error("Invalid option")]
+    InvalidOption,
+}
+
+pub fn sync_settings(action: SetManAction) -> Result<(), SetManError> {
+    let settings_path = Paths::default().settings_path;
     let gitman = GitRepo::new();
     gitman.clone_repo(true);
     match action {
-        SetmanAction::SyncUp => {
+        SetManAction::SyncUp => {
             let dir_names = fileman::get_dir_names_in_path(&settings_path).unwrap();
             let mut apps = Apps::new();
             for dir_name in dir_names {
@@ -51,8 +59,9 @@ pub fn sync_settings(action: SetmanAction) {
                 fileman::copy_files(app.file_names, &source, &dest).unwrap();
             }
             gitman.push_changes().unwrap();
+            Ok(())
         }
-        SetmanAction::SyncDown => {
+        SetManAction::SyncDown => {
             let dirs_to_copy = gitman.clone().get_dir_names();
             for dir_name in dirs_to_copy.clone() {
                 let mut source = gitman.repo_path.clone();
@@ -65,9 +74,10 @@ pub fn sync_settings(action: SetmanAction) {
                     .map(|n| n.unwrap().file_name().to_str().unwrap().to_string())
                     .collect();
                 fileman::copy_files(file_names, &source, &dest).unwrap();
-            }
+            };
+            Ok(())
         }
-        _ => println!("Invalid option, exiting."),
+        _ => Err(SetManError::InvalidOption),
     }
 }
 
@@ -103,95 +113,95 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
 }
 
 fn copy_app_files(app: &App, from_local: bool) {
-    let local_path = &Paths::new().get_app_path(&app.name);
+    let mut local_path = Paths::default().settings_path;
+    local_path.push(&app.name);
     logger::print_job("Found application:".to_string());
     let tmp_app = app.clone();
     logger::print_app(&tmp_app.name, &tmp_app.config_path, &tmp_app.file_names, false);
     if from_local {
-        fileman::copy_files(app.clone().file_names, local_path, &app.config_path).unwrap();
+        fileman::copy_files(app.clone().file_names, &local_path, &app.config_path).unwrap();
         return;
     }
-    fileman::copy_files(app.clone().file_names, &app.config_path, local_path).unwrap();
+    fileman::copy_files(app.clone().file_names, &app.config_path, &local_path).unwrap();
 }
 
-pub fn app_action(action: SetmanAction) {
+pub fn app_action(action: SetManAction) {
     let mut apps = Apps::new();
     match action {
-        SetmanAction::Install(app_name) => {
+        SetManAction::Install(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
             logger::print_job(format!("Installing {}", app_name));
             copy_app_files(&app, true);
         },
-        SetmanAction::Uninstall(app_name) => {
+        SetManAction::Uninstall(app_name) => {
             logger::print_job(format!("Uninstalling {}", app_name));
             let app = apps.find_app_by_name(app_name).unwrap();
             fileman::remove_files(&app.config_path).unwrap();
         },
-        SetmanAction::Save(app_name) => {
+        SetManAction::Save(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
             logger::print_job(format!("Saving {}", app_name));
             copy_app_files(&app, false);
         },
-        SetmanAction::Modify(app_name) => {
+        SetManAction::Modify(app_name) => {
             logger::print_job(format!("Modify {}", &app_name));
             modify_application(app_name).unwrap();
         },
-        SetmanAction::Remove(app_name) => {
+        SetManAction::Remove(app_name) => {
             readline::are_you_sure("remove ".to_string() + app_name).unwrap();
             logger::print_job(format!("Removing {}", &app_name));
             // remove app from saved list of apps
             apps.remove_app(app_name).unwrap();
 
-            let app_local_path = Paths::new()
-                .get_app_path(&app_name);
+            let mut app_local_path = Paths::default().settings_path;
+            app_local_path.push(&app_name);
             // remove the application's files in the local copy of configs
             fileman::remove_files(&app_local_path).unwrap();
             logger::print_info("Done".to_string());
         },
-        SetmanAction::New => {
+        SetManAction::New => {
             logger::print_new_app_header();
             let app_name = readline::read("Enter Application name").unwrap();
             let app_config_path = readline::read("Config path (relative to home)").unwrap();
             let config_files = readline::read("File names to save (space separated)").unwrap();
 
             let files_names = config_files.split_whitespace().map(String::from).collect();
-            let mut apps = Apps::new();
             apps.save_new_app(App::new(app_name, app_config_path, files_names)).unwrap();
         },
-        _ => panic!("Invalid option, exiting."),
+        _ => panic!("{}", SetManError::InvalidOption),
     }
 }
 
-pub fn all_apps_action(action: SetmanAction) {
+pub fn all_apps_action(action: SetManAction) {
     let apps = Apps::new();
 
     for app in apps.items.iter() {
         match action {
-            SetmanAction::InstallAll(apps_to_skip) => {
+            SetManAction::InstallAll(apps_to_skip) => {
                 logger::print_job("Installing all applications".to_owned());
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, true);
                 }
             },
-            SetmanAction::UninstallAll(apps_to_skip) => {
+            SetManAction::UninstallAll(apps_to_skip) => {
                 logger::print_job("Uninstalling all applications".to_owned());
                 if !apps_to_skip.contains(&app.name) {
                     fileman::remove_files(&app.config_path).unwrap();
                 }
             },
-            SetmanAction::SaveAll(apps_to_skip) => {
+            SetManAction::SaveAll(apps_to_skip) => {
                 logger::print_job("Saving all applications".to_owned());
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, false)
                 }
             },
-            _ => println!("Invalid option, exiting"),
+            _ => panic!("{}", SetManError::InvalidOption),
         };
     }
 
 }
 
-pub fn modify_application(app_name: &str) -> Result<(), Error> {
+pub fn modify_application(app_name: &str) -> Result<(), IOError> {
     let mut apps = Apps::new();
     let mut app = apps.find_app_by_name(&app_name).unwrap();
     let mod_options = vec!["Name", "Config path", "File names"];
@@ -200,7 +210,7 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
         1 => {
             let rel_path = readline::read("Enter a new config path")?;
             let config_path = PathBuf::from(
-                Paths::new().get_absolute_path(&rel_path)
+                paths::get_absolute_path(&rel_path)
             );
             app.config_path = config_path;
         },
@@ -217,7 +227,7 @@ pub fn modify_application(app_name: &str) -> Result<(), Error> {
             file_names.insert(file_index, new_file_name);
             app.file_names = file_names;
         }
-        _ => panic!("Invalid option, exiting."),
+        _ => panic!("{}", SetManError::InvalidOption),
     }
     // make sure user wants to modify the application
     if readline::are_you_sure("modify ".to_owned() + &app_name)? {
@@ -238,7 +248,7 @@ pub fn compare_upstream() {
         .id()
         .to_string();
 
-    let local_commit_file = Paths::new().commit_id_path;
+    let local_commit_file = Paths::default().commit_id_path;
     let mut file = match File::open(&local_commit_file) {
         Ok(file) => file,
         Err(e) => panic!("Could not open {:?}: {}", &local_commit_file, e),

@@ -48,7 +48,7 @@ enum GitError {
 
 impl GitSettings {
     fn new() -> GitSettings {
-        let git_config_path = Paths::new().git_config_path;
+        let git_config_path = Paths::default().git_config_path;
         let file_content = match fs::read_to_string(&git_config_path) {
             Ok(content) => content,
             Err(e) => {
@@ -173,7 +173,7 @@ impl GitRepo {
 
     fn save_commit_id(&self, commit_id: Oid) -> std::io::Result<()> {
         logger::print_job("Saving new commit id".to_string());
-        let commit_id_path = Paths::new().commit_id_path;
+        let commit_id_path = Paths::default().commit_id_path;
         let file = File::create(commit_id_path)?;
         let mut file = LineWriter::new(file);
         file.write_all(commit_id.to_string().as_bytes())?;

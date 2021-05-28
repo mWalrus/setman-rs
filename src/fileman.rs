@@ -12,7 +12,7 @@ use colored::*;
 use paths::Paths;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
-use std::{io::Result, path::Path};
+use std::{io::Result as IOResult, path::Path};
 use regex::Regex;
 use thiserror::Error;
 
@@ -53,8 +53,7 @@ pub enum TOMLError {
 
 impl App {
     pub fn new(name: String, config_path: String, file_names: Vec<String>) -> App {
-        let config_path = Paths::new()
-            .get_absolute_path(&config_path);
+        let config_path = paths::get_absolute_path(&config_path);
         App {
             name,
             config_path,
@@ -65,10 +64,12 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
-        let file_content: String = match fs::read_to_string(Paths::new().applist_path) {
-            Ok(content) => content,
-            Err(e) => panic!("{}", TOMLError::FileError { source: e }),
-        };
+        let file_content: String = match fs::read_to_string(
+            Paths::default().applist_path
+        ) {
+            Ok(content) => Ok(content),
+            Err(e) => Err(TOMLError::FileError{source: e}),
+        }.unwrap();
 
         match toml::from_str::<Apps>(&file_content) {
             Ok(toml) => toml,
@@ -97,7 +98,7 @@ impl Apps {
         Some(apps)
     }
 
-    pub fn save_new_app(&mut self, app: App) -> Result<()> {
+    pub fn save_new_app(&mut self, app: App) -> IOResult<()> {
         for app_item in self.items.clone() {
             if app_item.name.eq(&app.name) {
                 panic!("{}", AppError::Duplicate);
@@ -108,20 +109,20 @@ impl Apps {
         Ok(())
     }
 
-    pub fn remove_app(&mut self, app_name: &str) -> Result<()> {
+    pub fn remove_app(&mut self, app_name: &str) -> IOResult<()> {
         self.items.retain(|a| a.name.ne(app_name));
         self.write_toml()?;
         Ok(())
     }
 
-    fn write_toml(&self) -> Result<()>{
+    fn write_toml(&self) -> IOResult<()>{
         let toml = toml::to_string(&self).unwrap();
-        fs::write(Paths::new().applist_path, &toml)?;
+        fs::write(Paths::default().applist_path, &toml)?;
         Ok(())
     }
 }
 
-pub fn get_dir_names_in_path(dir_path: &PathBuf) -> Result<Vec<String>> {
+pub fn get_dir_names_in_path(dir_path: &PathBuf) -> IOResult<Vec<String>> {
     let read = Path::new(dir_path).read_dir()?;
     let mut result: Vec<String> = Vec::new();
     for e in read {
@@ -142,7 +143,7 @@ pub fn copy_files(
     file_names: Vec<String>,
     source: &PathBuf,
     dest: &PathBuf
-) -> Result<()> {
+) -> IOResult<()> {
     logger::print_job(format!("Copying files from {:?}", source));
     assert!(source.exists());
     assert!(dest.exists());
@@ -161,7 +162,7 @@ pub fn copy_files(
     Ok(())
 }
 
-pub fn remove_files(conf_path: &PathBuf) -> Result<()> {
+pub fn remove_files(conf_path: &PathBuf) -> IOResult<()> {
     logger::print_job(
         format!("Removing files in {:#?}", &conf_path)
     );
