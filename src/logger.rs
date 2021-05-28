@@ -22,15 +22,15 @@ pub fn print_header() {
     );
 }
 
-pub fn print_job(message: String) {
+pub fn print_job(message: &str) {
     println!("{} {}", "[~]".yellow().bold(), message);
 }
 
-pub fn print_info(message: String) {
+pub fn print_info(message: &str) {
     println!("{} {}", "[*]".blue().bold(), message);
 }
 
-pub fn print_warn(message: String) {
+pub fn print_warn(message: &str) {
     println!("{} {}", "[!]".red().bold(), message);
 }
 
@@ -44,7 +44,7 @@ pub fn print_app(
     app_file_names: &Vec<String>,
     verbose: bool,
 ) {
-    print_info(app_name.to_string());
+    print_info(app_name);
     if verbose {
         println!(
             "{:>18} {:?}",

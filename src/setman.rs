@@ -13,7 +13,7 @@ use fileman::{App, Apps};
 use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
-use std::{fs::File, io::Read, path::{Path, PathBuf}};
+use std::{fs::File, io::Read, path::Path};
 use std::io::Error as IOError;
 use thiserror::Error;
 
@@ -82,7 +82,7 @@ pub fn sync_settings(action: SetManAction) -> Result<(), SetManError> {
 }
 
 pub fn print_app_list(option: ListOptions, verbose: bool) {
-    logger::print_job("Applications:".to_string());
+    logger::print_job("Applications:");
 
     let mut apps = Apps::new();
     match option {
@@ -115,7 +115,7 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
 fn copy_app_files(app: &App, from_local: bool) {
     let mut local_path = Paths::default().settings_path;
     local_path.push(&app.name);
-    logger::print_job("Found application:".to_string());
+    logger::print_job("Found application:");
     let tmp_app = app.clone();
     logger::print_app(&tmp_app.name, &tmp_app.config_path, &tmp_app.file_names, false);
     if from_local {
@@ -130,26 +130,26 @@ pub fn app_action(action: SetManAction) {
     match action {
         SetManAction::Install(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
-            logger::print_job(format!("Installing {}", app_name));
+            logger::print_job(&format!("Installing {}", app_name));
             copy_app_files(&app, true);
         },
         SetManAction::Uninstall(app_name) => {
-            logger::print_job(format!("Uninstalling {}", app_name));
+            logger::print_job(&format!("Uninstalling {}", app_name));
             let app = apps.find_app_by_name(app_name).unwrap();
             fileman::remove_files(&app.config_path).unwrap();
         },
         SetManAction::Save(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
-            logger::print_job(format!("Saving {}", app_name));
+            logger::print_job(&format!("Saving {}", app_name));
             copy_app_files(&app, false);
         },
         SetManAction::Modify(app_name) => {
-            logger::print_job(format!("Modify {}", &app_name));
+            logger::print_job(&format!("Modify {}", &app_name));
             modify_application(app_name).unwrap();
         },
         SetManAction::Remove(app_name) => {
             readline::are_you_sure("remove ".to_string() + app_name).unwrap();
-            logger::print_job(format!("Removing {}", &app_name));
+            logger::print_job(&format!("Removing {}", &app_name));
             // remove app from saved list of apps
             apps.remove_app(app_name).unwrap();
 
@@ -157,13 +157,15 @@ pub fn app_action(action: SetManAction) {
             app_local_path.push(&app_name);
             // remove the application's files in the local copy of configs
             fileman::remove_files(&app_local_path).unwrap();
-            logger::print_info("Done".to_string());
+            logger::print_info("Done");
         },
         SetManAction::New => {
             logger::print_new_app_header();
             let app_name = readline::read("Enter Application name").unwrap();
-            let app_config_path = readline::read("Config path (relative to home)").unwrap();
-            let config_files = readline::read("File names to save (space separated)").unwrap();
+            logger::print_info("Config path should be relative to home");
+            let app_config_path = readline::read("Config path").unwrap();
+            logger::print_info("Format: file_name.extension (space separated if > 1)");
+            let config_files = readline::read("File name(s) to save").unwrap();
 
             let files_names = config_files.split_whitespace().map(String::from).collect();
             apps.save_new_app(App::new(app_name, app_config_path, files_names)).unwrap();
@@ -178,19 +180,19 @@ pub fn all_apps_action(action: SetManAction) {
     for app in apps.items.iter() {
         match action {
             SetManAction::InstallAll(apps_to_skip) => {
-                logger::print_job("Installing all applications".to_owned());
+                logger::print_job("Installing all applications");
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, true);
                 }
             },
             SetManAction::UninstallAll(apps_to_skip) => {
-                logger::print_job("Uninstalling all applications".to_owned());
+                logger::print_job("Uninstalling all applications");
                 if !apps_to_skip.contains(&app.name) {
                     fileman::remove_files(&app.config_path).unwrap();
                 }
             },
             SetManAction::SaveAll(apps_to_skip) => {
-                logger::print_job("Saving all applications".to_owned());
+                logger::print_job("Saving all applications");
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, false)
                 }
@@ -209,9 +211,7 @@ pub fn modify_application(app_name: &str) -> Result<(), IOError> {
         0 => app.name = readline::read("Enter a new name")?,
         1 => {
             let rel_path = readline::read("Enter a new config path")?;
-            let config_path = PathBuf::from(
-                paths::get_absolute_path(&rel_path)
-            );
+            let config_path = paths::get_absolute_path(&rel_path);
             app.config_path = config_path;
         },
         2 => {
@@ -257,8 +257,8 @@ pub fn compare_upstream() {
     file.read_to_string(&mut contents).unwrap();
 
     if contents.eq(&commit_id.to_string()) {
-        logger::print_info("Local is up to date".to_string());
+        logger::print_info("Local is up to date");
         return
     }
-    logger::print_warn("Local is behind".to_string());
+    logger::print_warn("Local is behind");
 }
