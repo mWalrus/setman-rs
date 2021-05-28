@@ -5,6 +5,7 @@
 use crate::logger;
 use crate::paths;
 use crate::readline;
+use crate::fileman;
 use crate::thiserror;
 
 use git2::{
@@ -50,10 +51,10 @@ impl GitSettings {
         let git_config_path = Paths::new().git_config_path;
         let file_content = match fs::read_to_string(&git_config_path) {
             Ok(content) => content,
-            Err(_e) => {
+            Err(e) => {
                 panic!(
-                    "File {} not found, exiting",
-                    git_config_path.to_str().unwrap()
+                    "{}",
+                    fileman::TOMLError::FileError{source: e}
                 );
             }
         };
@@ -65,7 +66,7 @@ impl GitSettings {
                 pass: settings.pass,
             },
             Err(e) => {
-                panic!("Could not parse {:?}. Error: {}", &git_config_path, e);
+                panic!("{}", fileman::TOMLError::ParseError{source: e});
             }
         }
     }

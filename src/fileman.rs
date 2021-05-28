@@ -34,10 +34,20 @@ pub enum AppError {
     NotFound(String),
     #[error("An application with that name already exists")]
     Duplicate,
+
+}
+
+#[derive(Error, Debug)]
+pub enum TOMLError {
     #[error("Failed to read from file")]
     FileError {
         #[from]
         source: std::io::Error,
+    },
+    #[error("Failed to parse toml")]
+    ParseError {
+        #[from]
+        source: toml::de::Error,
     }
 }
 
@@ -57,7 +67,7 @@ impl Apps {
     pub fn new() -> Apps {
         let file_content: String = match fs::read_to_string(Paths::new().applist_path) {
             Ok(content) => content,
-            Err(e) => panic!("{}", AppError::FileError { source: e }),
+            Err(e) => panic!("{}", TOMLError::FileError { source: e }),
         };
 
         match toml::from_str::<Apps>(&file_content) {
