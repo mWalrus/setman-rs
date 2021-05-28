@@ -112,7 +112,7 @@ fn main() {
                 _ => {}
             };
             if sub_m.is_present("push") {
-                setman::sync_settings(SetManAction::SyncUp);
+                setman::sync_settings(SetManAction::SyncUp).unwrap();
             }
         },
         ("modify", Some(sub_m)) => {
@@ -132,7 +132,7 @@ fn main() {
             match direction.eq("up") {
                 true => setman::sync_settings(SetManAction::SyncUp),
                 false => setman::sync_settings(SetManAction::SyncDown),
-            };
+            }.unwrap();
         },
         ("compare", Some(_sub_m)) => {
             setman::compare_upstream();
