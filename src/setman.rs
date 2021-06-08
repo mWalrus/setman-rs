@@ -115,9 +115,7 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
 fn copy_app_files(app: &App, from_local: bool) {
     let mut local_path = Paths::default().settings_path;
     local_path.push(&app.name);
-    logger::print_job("Found application:");
-    let tmp_app = app.clone();
-    logger::print_app(&tmp_app.name, &tmp_app.config_path, &tmp_app.file_names, false);
+    logger::print_job(&format!("Copying files for {}", &app.name));
     if from_local {
         fileman::copy_files(app.clone().file_names, &local_path, &app.config_path).unwrap();
         return;
@@ -180,19 +178,16 @@ pub fn all_apps_action(action: SetManAction) {
     for app in apps.items.iter() {
         match action {
             SetManAction::InstallAll(apps_to_skip) => {
-                logger::print_job("Installing all applications");
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, true);
                 }
             },
             SetManAction::UninstallAll(apps_to_skip) => {
-                logger::print_job("Uninstalling all applications");
                 if !apps_to_skip.contains(&app.name) {
                     fileman::remove_files(&app.config_path).unwrap();
                 }
             },
             SetManAction::SaveAll(apps_to_skip) => {
-                logger::print_job("Saving all applications");
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, false)
                 }

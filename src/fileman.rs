@@ -144,7 +144,6 @@ pub fn copy_files(
     source: &Path,
     dest: &Path
 ) -> IOResult<()> {
-    logger::print_job(&format!("Copying files from {:?}", source));
     assert!(source.exists());
     assert!(dest.exists());
     for file in file_names {
@@ -164,7 +163,7 @@ pub fn copy_files(
 
 pub fn remove_files(conf_path: &Path) -> IOResult<()> {
     logger::print_job(
-        &format!("Removing files in {:#?}", &conf_path)
+        &format!("Removing files in {:?}", &conf_path)
     );
     let files = fs::read_dir(conf_path)?;
     for file in files {
