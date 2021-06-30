@@ -8,70 +8,44 @@ use crate::readline;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions,
-    RemoteCallbacks, Repository, Signature, Tree,
+    RemoteCallbacks, Repository, Signature, Tree, Config
 };
 use paths::Paths;
-use serde::Deserialize;
 use std::{fs::File, io::{LineWriter, Write}};
 use std::{fs, path::Path};
 use uuid::Uuid;
 use std::path::PathBuf;
 
-#[derive(Deserialize, Clone)]
 pub struct GitRepo {
     pub repo_path: PathBuf,
-    git_settings: GitSettings,
-}
-
-#[derive(Deserialize, Clone, Debug)]
-struct GitSettings {
     upstream_url: String,
-    name: String,
-    email: String,
-    pass: Option<String>,
-}
-
-impl GitSettings {
-    fn new() -> GitSettings {
-        let git_config_path = Paths::new().git_config_path;
-        let file_content = match fs::read_to_string(&git_config_path) {
-            Ok(content) => content,
-            Err(_e) => {
-                panic!(
-                    "File {} not found, exiting",
-                    git_config_path.to_str().unwrap()
-                );
-            }
-        };
-        match toml::from_str::<Self>(&file_content) {
-            Ok(settings) => Self {
-                upstream_url: settings.upstream_url,
-                name: settings.name,
-                email: settings.email,
-                pass: settings.pass,
-            },
-            Err(e) => {
-                panic!("Could not parse {:?}. Error: {}", &git_config_path, e);
-            }
-        }
-    }
+    git_config: Config,
 }
 
 impl GitRepo {
     pub fn new() -> Self {
-        let git_settings = GitSettings::new();
+        let git_config = Config::open_default().unwrap();
         let tmp_dir_name = "setman-tmp-".to_string() + &Uuid::new_v4().to_string();
         let repo_path: PathBuf = [
             r"/tmp",
             &tmp_dir_name,
         ].iter().collect();
+        let upstream_url = match fs::read_to_string(Paths::new().upstream_path) {
+            Ok(url) => url.replace('\n', ""),
+            Err(_e) => {
+                let url = readline::read("Enter your repo's upstream url").unwrap();
+                fs::write(Paths::new().upstream_path, &url).unwrap();
+                url
+            }
+        };
         Self {
             repo_path,
-            git_settings,
+            upstream_url,
+            git_config,
         }
     }
 
-    pub fn get_dir_names(self) -> Vec<String> {
+    pub fn get_dir_names(&self) -> Vec<String> {
         logger::print_job("Getting directories from git repo".to_string());
         let directories = fs::read_dir(&self.repo_path).unwrap();
 
@@ -104,7 +78,7 @@ impl GitRepo {
                 let tree_id = index.write_tree()?;
                 let tree = repo.find_tree(tree_id)?;
 
-                let parent = self.clone().get_parent_commit(&repo).unwrap();
+                let parent = self.get_parent_commit(&repo).unwrap();
                 let new_commit_id = self.create_commit(
                     &repo,
                     &signature,
@@ -169,18 +143,12 @@ impl GitRepo {
     fn gen_callbacks<'a>(&'a self) -> RemoteCallbacks<'a> {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
-            //let password = readline::password("Enter your git password").unwrap();
-            let password: &str = &self
-                .clone()
-                .git_settings
-                .pass
-                .unwrap_or_else(|| readline::password("Enter your git password").unwrap());
-            Cred::userpass_plaintext(&self.git_settings.name, &password)
+           Cred::credential_helper(&self.git_config, &self.upstream_url, None)
         });
         callbacks
     }
 
-    pub fn get_parent_commit<'a>(self, repo: &'a Repository) -> Option<Commit<'a>> {
+    pub fn get_parent_commit<'a>(&self, repo: &'a Repository) -> Option<Commit<'a>> {
         let commit = match repo.revparse_single("origin") {
             Ok(obj) => obj,
             Err(e) => panic!("Error: {}", e),
@@ -202,7 +170,7 @@ impl GitRepo {
         builder.fetch_options(fetch_opts);
 
         let repo = builder
-            .clone(&self.git_settings.upstream_url, Path::new(&self.repo_path))
+            .clone(&self.upstream_url, Path::new(&self.repo_path))
             .unwrap();
 
         let latest_commit = self.clone().get_parent_commit(&repo).unwrap();

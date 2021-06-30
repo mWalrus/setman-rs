@@ -11,7 +11,7 @@ pub struct Paths {
     pub setman_path: PathBuf,
     pub settings_path: PathBuf,
     pub applist_path: PathBuf,
-    pub git_config_path: PathBuf,
+    pub upstream_path: PathBuf,
     pub commit_id_path: PathBuf,
 }
 
@@ -28,8 +28,8 @@ impl Paths {
         let mut applist_path = setman_path.clone();
         applist_path.push("apps.toml");
 
-        let mut git_config_path = setman_path.clone();
-        git_config_path.push("git.toml");
+        let mut upstream_path = setman_path.clone();
+        upstream_path.push("upstream_url");
 
         let mut commit_id_path = setman_path.clone();
         commit_id_path.push("latest_commit");
@@ -38,7 +38,7 @@ impl Paths {
             setman_path,
             settings_path,
             applist_path,
-            git_config_path,
+            upstream_path,
             commit_id_path
         }
     }

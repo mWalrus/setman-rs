@@ -12,11 +12,8 @@ command = "cargo"
 args = ["build", "--release"]
 dependencies = ["clean"]
 
-[tasks.make-config]
+[tasks.mksettings]
 script = "mkdir -p $HOME/.config/setman/settings"
-
-[tasks.touch-git-file]
-script = "touch $HOME/.config/setman/git.toml"
 
 [tasks.copy-binary]
 script = "sudo install -s -Dm755 ./target/release/setman /usr/bin/setman"
@@ -25,8 +22,7 @@ script = "sudo install -s -Dm755 ./target/release/setman /usr/bin/setman"
 dependencies = [
   "clean",
   "build",
-  "make-config",
-  "touch-git-file",
+  "mksettings",
   "copy-binary"
 ]
 

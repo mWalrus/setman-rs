@@ -53,7 +53,7 @@ pub fn sync_settings(action: SetmanAction) {
             gitman.push_changes().unwrap();
         }
         SetmanAction::SyncDown => {
-            let dirs_to_copy = gitman.clone().get_dir_names();
+            let dirs_to_copy = gitman.get_dir_names();
             for dir_name in dirs_to_copy.clone() {
                 let mut source = gitman.repo_path.clone();
                 source.push(&dir_name);
