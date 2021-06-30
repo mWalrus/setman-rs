@@ -25,11 +25,12 @@ pub struct GitRepo {
 impl GitRepo {
     pub fn new() -> Self {
         let git_config = Config::open_default().unwrap();
-        let tmp_dir_name = "setman-tmp-".to_string() + &Uuid::new_v4().to_string();
+        let tmp_dir_name = format!("setman-tmp-{}", &Uuid::new_v4().to_string());
         let repo_path: PathBuf = [
             r"/tmp",
             &tmp_dir_name,
         ].iter().collect();
+
         let upstream_url = match fs::read_to_string(Paths::new().upstream_path) {
             Ok(url) => url.replace('\n', ""),
             Err(_e) => {
