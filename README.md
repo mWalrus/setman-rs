@@ -20,15 +20,8 @@ cargo install --force cargo-make
 ## Post install
 Before you start using any of the git features of setman you will need to set up an upstream repository.
 This repository can be either private or public.
-You will also need to enter your git username, email and upstream url in the `git.toml` file in `$HOME/.config/setman/`
-
-```
-upstream_url = "https://github.com/username/setman-settings-repo-name.git"
-name = "your-github-username"
-email = "your@github.email"
-pass = "giTHuB-P@$$woRd" // can be omitted
-```
-If you chose to omit the password field you will be prompted for it during runtime when using any of the git related functionalities.
+<br>
+On first run setman will ask for your settings repository's upstream url, enter it and setman will save it.
 
 ## Usage
 After the setup process is complete you can run `setman help` to view the help page for setman.
