@@ -8,29 +8,27 @@ use colored::*;
 use dialoguer::{Confirm, Input, Password, Select};
 
 pub fn read(message: &str) -> Result<String, Error> {
-    Ok(Input::<String>::new()
+    Input::<String>::new()
         .with_prompt(format!("{} {}", "[<]".bold().bright_cyan(), message))
-        .interact_text()?
-        .to_string())
+        .interact_text()
 }
 
 pub fn password(message: &str) -> Result<String, Error> {
-    Ok(Password::new()
+    Password::new()
         .with_prompt(format!("{} {}", "[<]".bold().bright_cyan(), message))
-        .interact()?
-        .to_string())
+        .interact()
 }
 
 pub fn select(items: Vec<&str>) -> Result<usize, Error> {
-    Ok(Select::new().items(&items).interact()?)
+    Select::new().items(&items).interact()
 }
 
 pub fn are_you_sure(action: String) -> Result<bool, Error> {
-    Ok(Confirm::new()
+    Confirm::new()
         .with_prompt(format!(
             "{} Are you sure you want to {}?",
             "[?]".bold().green(),
             action
         ))
-        .interact()?)
+        .interact()
 }

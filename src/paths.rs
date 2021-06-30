@@ -15,8 +15,8 @@ pub struct Paths {
     pub commit_id_path: PathBuf,
 }
 
-impl Paths {
-    pub fn new() -> Paths {
+impl Default for Paths {
+    fn default() -> Paths {
         let home_path = home_dir().unwrap().display().to_string();
 
         let mut setman_path: PathBuf = PathBuf::from(home_path);
@@ -42,17 +42,11 @@ impl Paths {
             commit_id_path
         }
     }
+}
 
-    pub fn get_app_path(self, app_name: &str) -> PathBuf {
-        let mut path = self.settings_path.clone();
-        path.push(app_name);
-        path
-    }
-
-    pub fn get_absolute_path(self, rel_path: &str) -> PathBuf {
-        let home = home_dir().unwrap().display().to_string();
-        let mut path = PathBuf::from(home);
-        path.push(rel_path);
-        path
-    }
+pub fn get_absolute_path(rel_path: &str) -> PathBuf {
+    let home = home_dir().unwrap().display().to_string();
+    let mut path = PathBuf::from(home);
+    path.push(rel_path);
+    path
 }

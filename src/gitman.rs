@@ -5,6 +5,7 @@
 use crate::logger;
 use crate::paths;
 use crate::readline;
+use crate::thiserror;
 
 use git2::{
     build::RepoBuilder, Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions,
@@ -15,11 +16,24 @@ use std::{fs::File, io::{LineWriter, Write}};
 use std::{fs, path::Path};
 use uuid::Uuid;
 use std::path::PathBuf;
+use thiserror::Error;
 
 pub struct GitRepo {
     pub repo_path: PathBuf,
     upstream_url: String,
     git_config: Config,
+}
+
+#[derive(Error, Debug)]
+enum GitError<'a> {
+    #[error("Failed to open {0} as repository: {1}")]
+    RepoOpen(&'a PathBuf, git2::Error),
+    #[error("Failed to create commit: {0}")]
+    CreateCommit(git2::Error),
+    #[error("Failed to get parent commit: {0}")]
+    RevParseError(git2::Error),
+    #[error("Failed to get repo index")]
+    GetIndexErr
 }
 
 impl GitRepo {
@@ -31,11 +45,11 @@ impl GitRepo {
             &tmp_dir_name,
         ].iter().collect();
 
-        let upstream_url = match fs::read_to_string(Paths::new().upstream_path) {
+        let upstream_url = match fs::read_to_string(Paths::default().upstream_path) {
             Ok(url) => url.replace('\n', ""),
             Err(_e) => {
                 let url = readline::read("Enter your repo's upstream url").unwrap();
-                fs::write(Paths::new().upstream_path, &url).unwrap();
+                fs::write(Paths::default().upstream_path, &url).unwrap();
                 url
             }
         };
@@ -47,7 +61,7 @@ impl GitRepo {
     }
 
     pub fn get_dir_names(&self) -> Vec<String> {
-        logger::print_job("Getting directories from git repo".to_string());
+        logger::print_job("Getting directories from git repo");
         let directories = fs::read_dir(&self.repo_path).unwrap();
 
         let mut dirs_names: Vec<String> = Vec::new();
@@ -57,7 +71,7 @@ impl GitRepo {
             // filter the entries to remove files and .git dir
             if tmp.path().is_dir() && tmp.file_name().ne(".git") {
                 let dir_path = tmp.file_name().to_str().unwrap().to_string();
-                logger::print_info(format!("Found directory: {}", dir_path));
+                logger::print_info(&format!("Found directory: {}", dir_path));
                 dirs_names.push(dir_path);
             }
         }
@@ -68,10 +82,13 @@ impl GitRepo {
         match Repository::open(&self.repo_path) {
             Ok(repo) => {
                 let signature = repo.signature()?;
-                let mut index = repo.index().expect("Failed to get repo index");
+                let mut index = match repo.index() {
+                    Ok(ind) => ind,
+                    Err(_e) => panic!("{}", GitError::GetIndexErr),
+                };
 
                 // git add .
-                logger::print_job("Staging files for commit".to_string());
+                logger::print_job("Staging files for commit");
                 index.add_all(["."].iter(), IndexAddOption::DEFAULT, None)?;
                 index.write()?;
 
@@ -95,15 +112,12 @@ impl GitRepo {
 
                 // push to remote origin
                 let mut origin = repo.find_remote("origin")?;
-                logger::print_job(format!("Pushing to remote: {}", origin.name().unwrap()));
+                logger::print_job(&format!("Pushing to remote: {}", origin.name().unwrap()));
                 origin.push(&["refs/heads/main"], Some(&mut push_opts))?;
-                logger::print_info("Done!".to_string());
+                logger::print_info("Done!");
                 Ok(())
             }
-            Err(e) => panic!(
-                "Failed to open {:?} as a git repo: {}",
-                &self.repo_path,
-                e),
+            Err(e) => panic!("{}", GitError::RepoOpen(&self.repo_path, e)),
         }
     }
 
@@ -125,15 +139,15 @@ impl GitRepo {
             &[parent],
         ) {
             Ok(commit) => commit,
-            Err(e) => panic!("Failed to create commit: {}", e),
+            Err(e) => panic!("{}", GitError::CreateCommit(e)),
         };
-        logger::print_info(format!("Created new commit with id: {}", new_commit_id));
+        logger::print_info(&format!("Created new commit with id: {}", new_commit_id));
         Ok(new_commit_id)
     }
 
     fn save_commit_id(&self, commit_id: Oid) -> std::io::Result<()> {
-        logger::print_job("Saving new commit id".to_string());
-        let commit_id_path = Paths::new().commit_id_path;
+        logger::print_job("Saving new commit id");
+        let commit_id_path = Paths::default().commit_id_path;
         let file = File::create(commit_id_path)?;
         let mut file = LineWriter::new(file);
         file.write_all(commit_id.to_string().as_bytes())?;
@@ -141,7 +155,7 @@ impl GitRepo {
         Ok(())
     }
 
-    fn gen_callbacks<'a>(&'a self) -> RemoteCallbacks<'a> {
+    fn gen_callbacks(&'_ self) -> RemoteCallbacks<'_> {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
            Cred::credential_helper(&self.git_config, &self.upstream_url, None)
@@ -152,7 +166,7 @@ impl GitRepo {
     pub fn get_parent_commit<'a>(&self, repo: &'a Repository) -> Option<Commit<'a>> {
         let commit = match repo.revparse_single("origin") {
             Ok(obj) => obj,
-            Err(e) => panic!("Error: {}", e),
+            Err(e) => panic!("{}", GitError::RevParseError(e)),
         }
         .as_commit()
         .unwrap()
@@ -161,7 +175,7 @@ impl GitRepo {
     }
 
     pub fn clone_repo(&self, save_commit_id: bool) {
-        logger::print_job("Cloning down from upstream".to_owned());
+        logger::print_job("Cloning down from upstream");
 
         let callbacks = self.gen_callbacks();
         let mut fetch_opts = FetchOptions::new();

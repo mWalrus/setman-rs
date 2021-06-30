@@ -25,3 +25,7 @@ On first run setman will ask for your settings repository's upstream url, enter 
 
 ## Usage
 After the setup process is complete you can run `setman help` to view the help page for setman.
+
+## Disclaimer
+This is my first rust project so code might not be idiomatic.
+Feel free to open an issue with ideas on how to improve or submit a pull-request! :)
