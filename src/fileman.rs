@@ -121,9 +121,14 @@ pub fn copy_files(
     source: &PathBuf,
     dest: &PathBuf
 ) -> Result<()> {
-    logger::print_job(format!("Copying files from {:?}", source));
     assert!(source.exists());
-    assert!(dest.exists());
+
+    if !dest.exists() {
+        logger::print_info("Destination folder does not exist, creating it".to_string());
+        fs::create_dir(dest).unwrap();
+    }
+
+    logger::print_job(format!("Copying files from {:?}", source));
     for file in file_names {
         let mut source_path = source.clone();
         source_path.push(&file);
