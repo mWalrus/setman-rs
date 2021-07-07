@@ -4,7 +4,6 @@
 
 use crate::fileman;
 use crate::gitman;
-use crate::logger;
 use crate::paths;
 use crate::readline;
 use crate::thiserror;
