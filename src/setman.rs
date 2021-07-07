@@ -82,7 +82,7 @@ pub fn sync_settings(action: SetManAction) -> Result<(), SetManError> {
 }
 
 pub fn print_app_list(option: ListOptions, verbose: bool) {
-    logger::print_job("Applications:");
+    job!("Applications:");
 
     let mut apps = Apps::new();
     match option {
@@ -91,12 +91,12 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
                 Some(names) => {
                     for name in names {
                         let app = apps.find_app_by_name(name).unwrap();
-                        logger::print_app(&app.name, &app.config_path, &app.file_names, verbose)
+                        print_app!(app, verbose)
                     }
                 },
                 None => {
                     for app in apps.items {
-                        logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
+                        print_app!(app, verbose);
                     }
                 }
             }
@@ -106,7 +106,7 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
                 regex
             );
             for app in found_apps.unwrap() {
-                logger::print_app(&app.name, &app.config_path, &app.file_names, verbose);
+                print_app!(app, verbose);
             }
         }
     }
@@ -115,7 +115,7 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
 fn copy_app_files(app: &App, from_local: bool) {
     let mut local_path = Paths::default().settings_path;
     local_path.push(&app.name);
-    logger::print_job(&format!("Copying files for {}", &app.name));
+    job!("Copying files for {}", &app.name);
     if from_local {
         fileman::copy_files(app.clone().file_names, &local_path, &app.config_path).unwrap();
         return;
@@ -128,26 +128,26 @@ pub fn app_action(action: SetManAction) {
     match action {
         SetManAction::Install(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
-            logger::print_job(&format!("Installing {}", app_name));
+            job!("Installing {}", app_name);
             copy_app_files(&app, true);
         },
         SetManAction::Uninstall(app_name) => {
-            logger::print_job(&format!("Uninstalling {}", app_name));
+            job!("Uninstalling {}", app_name);
             let app = apps.find_app_by_name(app_name).unwrap();
             fileman::remove_files(&app.config_path).unwrap();
         },
         SetManAction::Save(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
-            logger::print_job(&format!("Saving {}", app_name));
+            job!("Saving {}", app_name);
             copy_app_files(&app, false);
         },
         SetManAction::Modify(app_name) => {
-            logger::print_job(&format!("Modify {}", &app_name));
+            job!("Modify {}", &app_name);
             modify_application(app_name).unwrap();
         },
         SetManAction::Remove(app_name) => {
             readline::are_you_sure("remove ".to_string() + app_name).unwrap();
-            logger::print_job(&format!("Removing {}", &app_name));
+            job!("Removing {}", &app_name);
             // remove app from saved list of apps
             apps.remove_app(app_name).unwrap();
 
@@ -155,14 +155,14 @@ pub fn app_action(action: SetManAction) {
             app_local_path.push(&app_name);
             // remove the application's files in the local copy of configs
             fileman::remove_files(&app_local_path).unwrap();
-            logger::print_info("Done");
+            info!("Done");
         },
         SetManAction::New => {
-            logger::print_new_app_header();
+            info!("New application:");
             let app_name = readline::read("Enter Application name").unwrap();
-            logger::print_info("Config path should be relative to home");
+            info!("Config path should be relative to home");
             let app_config_path = readline::read("Config path").unwrap();
-            logger::print_info("Format: file_name.extension (space separated if > 1)");
+            info!("Format: file_name.extension (space separated if > 1)");
             let config_files = readline::read("File name(s) to save").unwrap();
 
             let files_names = config_files.split_whitespace().map(String::from).collect();
@@ -252,8 +252,8 @@ pub fn compare_upstream() {
     file.read_to_string(&mut contents).unwrap();
 
     if contents.eq(&commit_id) {
-        logger::print_info("Local is up to date");
+        info!("Local is up to date");
         return
     }
-    logger::print_warn("Local is behind");
+    warn!("Local is behind");
 }

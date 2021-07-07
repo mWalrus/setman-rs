@@ -2,7 +2,6 @@
 
 // SPDX-License-Identifier: BSD-2-Clause
 
-use crate::logger;
 use crate::paths;
 use crate::readline;
 use crate::thiserror;
@@ -61,7 +60,7 @@ impl GitRepo {
     }
 
     pub fn get_dir_names(&self) -> Vec<String> {
-        logger::print_job("Getting directories from git repo");
+        job!("Getting directories from git repo");
         let directories = fs::read_dir(&self.repo_path).unwrap();
 
         let mut dirs_names: Vec<String> = Vec::new();
@@ -71,7 +70,7 @@ impl GitRepo {
             // filter the entries to remove files and .git dir
             if tmp.path().is_dir() && tmp.file_name().ne(".git") {
                 let dir_path = tmp.file_name().to_str().unwrap().to_string();
-                logger::print_info(&format!("Found directory: {}", dir_path));
+                info!("Found directory: {}", dir_path);
                 dirs_names.push(dir_path);
             }
         }
@@ -88,7 +87,7 @@ impl GitRepo {
                 };
 
                 // git add .
-                logger::print_job("Staging files for commit");
+                job!("Staging files for commit");
                 index.add_all(["."].iter(), IndexAddOption::DEFAULT, None)?;
                 index.write()?;
 
@@ -112,9 +111,9 @@ impl GitRepo {
 
                 // push to remote origin
                 let mut origin = repo.find_remote("origin")?;
-                logger::print_job(&format!("Pushing to remote: {}", origin.name().unwrap()));
+                job!("Pushing to remote: {}", origin.name().unwrap());
                 origin.push(&["refs/heads/main"], Some(&mut push_opts))?;
-                logger::print_info("Done!");
+                info!("Done!");
                 Ok(())
             }
             Err(e) => panic!("{}", GitError::RepoOpen(&self.repo_path, e)),
@@ -141,12 +140,12 @@ impl GitRepo {
             Ok(commit) => commit,
             Err(e) => panic!("{}", GitError::CreateCommit(e)),
         };
-        logger::print_info(&format!("Created new commit with id: {}", new_commit_id));
+        info!("Created new commit with id: {}", new_commit_id);
         Ok(new_commit_id)
     }
 
     fn save_commit_id(&self, commit_id: Oid) -> std::io::Result<()> {
-        logger::print_job("Saving new commit id");
+        job!("Saving new commit id");
         let commit_id_path = Paths::default().commit_id_path;
         let file = File::create(commit_id_path)?;
         let mut file = LineWriter::new(file);
@@ -175,7 +174,7 @@ impl GitRepo {
     }
 
     pub fn clone_repo(&self, save_commit_id: bool) {
-        logger::print_job("Cloning down from upstream");
+        job!("Cloning down from upstream");
 
         let callbacks = self.gen_callbacks();
         let mut fetch_opts = FetchOptions::new();

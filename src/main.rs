@@ -13,19 +13,26 @@ extern crate uuid;
 extern crate regex;
 extern crate thiserror;
 
-mod args;
-mod fileman;
-mod gitman;
+#[macro_use]
 mod logger;
 mod paths;
 mod readline;
 mod setman;
+mod args;
+mod fileman;
+mod gitman;
 
 use clap::Values;
 use setman::SetManAction;
 use setman::ListOptions;
 
 //hej jag heter ellen. jag älskar dig även fast du tycker jag är jobbig. glad smiley
+
+pub enum LogLevel {
+    Job,
+    Info,
+    Warning,
+}
 
 fn main() {
     logger::print_header();
@@ -62,7 +69,7 @@ fn main() {
                     );
                 },
                 ("all", Some(all_subcommand)) => {
-                    logger::print_job("Installing all applications");
+                    job!("Installing all applications");
                     setman::all_apps_action(
                         SetManAction::InstallAll(
                             &get_skipped_apps(all_subcommand.values_of("skip"))
@@ -82,7 +89,7 @@ fn main() {
                     );
                 },
                 ("all", Some(all_subcommand)) => {
-                    logger::print_job("Uninstalling all applications");
+                    job!("Uninstalling all applications");
                     setman::all_apps_action(
                         SetManAction::UninstallAll(
                             &get_skipped_apps(all_subcommand.values_of("skip"))
@@ -102,7 +109,7 @@ fn main() {
                     );
                 },
                 ("all", Some(all_subcommand)) => {
-                    logger::print_job("Saving all applications");
+                    job!("Saving all applications");
                     setman::all_apps_action(
                         SetManAction::SaveAll(
                             &get_skipped_apps(all_subcommand.values_of("skip"))

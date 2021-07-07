@@ -2,13 +2,10 @@
 
 // SPDX-License-Identifier: BSD-2-Clause
 
-use crate::colored;
-use crate::logger;
 use crate::paths;
 use crate::regex;
 use crate::thiserror;
 
-use colored::*;
 use paths::Paths;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
@@ -29,9 +26,9 @@ pub struct App {
 }
 
 #[derive(Error, Debug)]
-pub enum AppError {
+pub enum AppError<'a> {
     #[error("An application with name '{0}' could not be found.")]
-    NotFound(String),
+    NotFound(&'a str),
     #[error("An application with that name already exists")]
     Duplicate,
 
@@ -83,7 +80,7 @@ impl Apps {
                 .position(|i| i.name == app_name) {
             Some(pos) => pos,
             None => {
-                panic!("{}", AppError::NotFound(app_name.to_string()))
+                panic!("{}", AppError::NotFound(app_name))
             }
         };
         Some(self.items.get(pos)?.clone())
@@ -125,8 +122,8 @@ impl Apps {
 pub fn get_dir_names_in_path(dir_path: &Path) -> IOResult<Vec<String>> {
     let read = Path::new(dir_path).read_dir()?;
     let mut result: Vec<String> = Vec::new();
-    for e in read {
-        let entry = e?;
+    for entry in read {
+        let entry = entry?;
         if entry.path().is_dir() {
             result.push(
                 entry.file_name()
@@ -147,36 +144,33 @@ pub fn copy_files(
     assert!(source.exists());
 
     if !dest.exists() {
-        logger::print_info("Destination folder does not exist, creating it");
+        info!("Destination folder does not exist, creating it");
         fs::create_dir(dest).unwrap();
     }
 
-    logger::print_job(&format!("Copying files from {:?}", source));
+    job!("Copying files from {:?}", source);
     for file in file_names {
+
         let mut source_path = source.to_path_buf();
         source_path.push(&file);
+
         let mut dest_path = dest.to_path_buf();
         dest_path.push(&file);
+
         // check if source file exists before attempting copy
         assert!(source_path.exists());
         fs::copy(source_path, dest_path)?;
-        logger::print_info(
-            &format!("Copied {} to {:?}", &file.bold(), &dest)
-        );
+        info!("Copied {} to {:?}", &file.bold(), &dest);
     }
     Ok(())
 }
 
 pub fn remove_files(conf_path: &Path) -> IOResult<()> {
-    logger::print_job(
-        &format!("Removing files in {:?}", &conf_path)
-    );
+    job!("Removing files in {:?}", &conf_path);
     let files = fs::read_dir(conf_path)?;
     for file in files {
         let file_path = file?.path();
-        logger::print_info(
-            &format!("Removing file {:?}", &file_path)
-        );
+        info!("Removing file {:?}", &file_path);
         fs::remove_file(&file_path)?;
     }
     Ok(())
