@@ -39,7 +39,7 @@ impl Default for Paths {
             settings_path,
             applist_path,
             upstream_path,
-            commit_id_path
+            commit_id_path,
         }
     }
 }

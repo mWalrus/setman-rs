@@ -12,8 +12,8 @@ use fileman::{App, Apps};
 use git2::Repository;
 use gitman::GitRepo;
 use paths::Paths;
-use std::{fs::File, io::Read, path::Path};
 use std::io::Error as IOError;
+use std::{fs::File, io::Read, path::Path};
 use thiserror::Error;
 
 pub enum SetManAction<'a> {
@@ -59,7 +59,7 @@ pub fn sync_settings(action: SetManAction) -> Result<(), SetManError> {
             }
             gitman.push_changes().unwrap();
             Ok(())
-        },
+        }
         SetManAction::SyncDown => {
             let dirs_to_copy = gitman.get_dir_names();
             for dir_name in dirs_to_copy.clone() {
@@ -73,9 +73,9 @@ pub fn sync_settings(action: SetManAction) -> Result<(), SetManError> {
                     .map(|n| n.unwrap().file_name().to_str().unwrap().to_string())
                     .collect();
                 fileman::copy_files(file_names, &source, &dest).unwrap();
-            };
+            }
             Ok(())
-        },
+        }
         _ => Err(SetManError::InvalidOption),
     }
 }
@@ -85,25 +85,21 @@ pub fn print_app_list(option: ListOptions, verbose: bool) {
 
     let mut apps = Apps::new();
     match option {
-        ListOptions::Literal(app_names) => {
-            match app_names {
-                Some(names) => {
-                    for name in names {
-                        let app = apps.find_app_by_name(name).unwrap();
-                        print_app!(app, verbose)
-                    }
-                },
-                None => {
-                    for app in apps.items {
-                        print_app!(app, verbose);
-                    }
+        ListOptions::Literal(app_names) => match app_names {
+            Some(names) => {
+                for name in names {
+                    let app = apps.find_app_by_name(name).unwrap();
+                    print_app!(app, verbose)
+                }
+            }
+            None => {
+                for app in apps.items {
+                    print_app!(app, verbose);
                 }
             }
         },
         ListOptions::Regex(regex) => {
-            let found_apps = apps.find_apps_from_regex(
-                regex
-            );
+            let found_apps = apps.find_apps_from_regex(regex);
             for app in found_apps.unwrap() {
                 print_app!(app, verbose);
             }
@@ -129,21 +125,21 @@ pub fn app_action(action: SetManAction) {
             let app = apps.find_app_by_name(&app_name).unwrap();
             job!("Installing {}", app_name);
             copy_app_files(&app, true);
-        },
+        }
         SetManAction::Uninstall(app_name) => {
             job!("Uninstalling {}", app_name);
             let app = apps.find_app_by_name(app_name).unwrap();
             fileman::remove_files(&app.config_path).unwrap();
-        },
+        }
         SetManAction::Save(app_name) => {
             let app = apps.find_app_by_name(&app_name).unwrap();
             job!("Saving {}", app_name);
             copy_app_files(&app, false);
-        },
+        }
         SetManAction::Modify(app_name) => {
             job!("Modify {}", &app_name);
             modify_application(app_name).unwrap();
-        },
+        }
         SetManAction::Remove(app_name) => {
             readline::are_you_sure("remove ".to_string() + app_name).unwrap();
             job!("Removing {}", &app_name);
@@ -155,7 +151,7 @@ pub fn app_action(action: SetManAction) {
             // remove the application's files in the local copy of configs
             fileman::remove_files(&app_local_path).unwrap();
             info!("Done");
-        },
+        }
         SetManAction::New => {
             info!("New application:");
             let app_name = readline::read("Enter Application name").unwrap();
@@ -165,8 +161,9 @@ pub fn app_action(action: SetManAction) {
             let config_files = readline::read("File name(s) to save").unwrap();
 
             let files_names = config_files.split_whitespace().map(String::from).collect();
-            apps.save_new_app(App::new(app_name, app_config_path, files_names)).unwrap();
-        },
+            apps.save_new_app(App::new(app_name, app_config_path, files_names))
+                .unwrap();
+        }
         _ => panic!("{}", SetManError::InvalidOption),
     }
 }
@@ -180,21 +177,20 @@ pub fn all_apps_action(action: SetManAction) {
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, true);
                 }
-            },
+            }
             SetManAction::UninstallAll(apps_to_skip) => {
                 if !apps_to_skip.contains(&app.name) {
                     fileman::remove_files(&app.config_path).unwrap();
                 }
-            },
+            }
             SetManAction::SaveAll(apps_to_skip) => {
                 if !apps_to_skip.contains(&app.name) {
                     copy_app_files(app, false)
                 }
-            },
+            }
             _ => panic!("{}", SetManError::InvalidOption),
         };
     }
-
 }
 
 pub fn modify_application(app_name: &str) -> Result<(), IOError> {
@@ -207,13 +203,10 @@ pub fn modify_application(app_name: &str) -> Result<(), IOError> {
             let rel_path = readline::read("Enter a new config path")?;
             let config_path = paths::get_absolute_path(&rel_path);
             app.config_path = config_path;
-        },
+        }
         2 => {
             let mut file_names = app.file_names;
-            let file_names_str = file_names
-                .iter()
-                .map(|s| &**s)
-                .collect();
+            let file_names_str = file_names.iter().map(|s| &**s).collect();
             let file_index: usize = readline::select(file_names_str)?;
 
             let new_file_name = readline::read("Enter a new file name")?;
@@ -236,11 +229,7 @@ pub fn compare_upstream() {
     let git_repo = gitman::GitRepo::new();
     git_repo.clone_repo(false);
     let repo = Repository::open(&git_repo.repo_path).unwrap();
-    let commit_id = git_repo
-        .get_parent_commit(&repo)
-        .unwrap()
-        .id()
-        .to_string();
+    let commit_id = git_repo.get_parent_commit(&repo).unwrap().id().to_string();
 
     let local_commit_file = Paths::default().commit_id_path;
     let mut file = match File::open(&local_commit_file) {
@@ -252,7 +241,7 @@ pub fn compare_upstream() {
 
     if contents.eq(&commit_id) {
         info!("Local is up to date");
-        return
+        return;
     }
     warn!("Local is behind");
 }

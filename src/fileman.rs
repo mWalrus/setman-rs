@@ -7,10 +7,10 @@ use crate::regex;
 use crate::thiserror;
 
 use paths::Paths;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 use std::{io::Result as IOResult, path::Path};
-use regex::Regex;
 use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -31,7 +31,6 @@ pub enum AppError<'a> {
     NotFound(&'a str),
     #[error("An application with that name already exists")]
     Duplicate,
-
 }
 
 #[derive(Error, Debug)]
@@ -45,7 +44,7 @@ pub enum TOMLError {
     ParseError {
         #[from]
         source: toml::de::Error,
-    }
+    },
 }
 
 impl App {
@@ -61,12 +60,11 @@ impl App {
 
 impl Apps {
     pub fn new() -> Apps {
-        let file_content: String = match fs::read_to_string(
-            Paths::default().applist_path
-        ) {
+        let file_content: String = match fs::read_to_string(Paths::default().applist_path) {
             Ok(content) => Ok(content),
-            Err(e) => Err(TOMLError::FileError{source: e}),
-        }.unwrap();
+            Err(e) => Err(TOMLError::FileError { source: e }),
+        }
+        .unwrap();
 
         match toml::from_str::<Apps>(&file_content) {
             Ok(toml) => toml,
@@ -75,9 +73,7 @@ impl Apps {
     }
 
     pub fn find_app_by_name(&'_ mut self, app_name: &str) -> Option<App> {
-        let pos: usize = match self.items
-                .iter()
-                .position(|i| i.name == app_name) {
+        let pos: usize = match self.items.iter().position(|i| i.name == app_name) {
             Some(pos) => pos,
             None => {
                 panic!("{}", AppError::NotFound(app_name))
@@ -88,7 +84,8 @@ impl Apps {
 
     pub fn find_apps_from_regex<'a>(&'a self, regex: &str) -> Option<Vec<&App>> {
         let re = Regex::new(regex).unwrap();
-        let apps = self.items
+        let apps = self
+            .items
             .iter()
             .filter(|app| re.is_match(&app.name))
             .collect();
@@ -112,7 +109,7 @@ impl Apps {
         Ok(())
     }
 
-    fn write_toml(&self) -> IOResult<()>{
+    fn write_toml(&self) -> IOResult<()> {
         let toml = toml::to_string(&self).unwrap();
         fs::write(Paths::default().applist_path, &toml)?;
         Ok(())
@@ -125,22 +122,13 @@ pub fn get_dir_names_in_path(dir_path: &Path) -> IOResult<Vec<String>> {
     for entry in read {
         let entry = entry?;
         if entry.path().is_dir() {
-            result.push(
-                entry.file_name()
-                    .to_str()
-                    .unwrap()
-                    .to_string()
-            );
+            result.push(entry.file_name().to_str().unwrap().to_string());
         }
     }
     Ok(result)
 }
 
-pub fn copy_files(
-    file_names: Vec<String>,
-    source: &Path,
-    dest: &Path
-) -> IOResult<()> {
+pub fn copy_files(file_names: Vec<String>, source: &Path, dest: &Path) -> IOResult<()> {
     assert!(source.exists());
 
     if !dest.exists() {
@@ -150,7 +138,6 @@ pub fn copy_files(
 
     job!("Copying files from {:?}", source);
     for file in file_names {
-
         let mut source_path = source.to_path_buf();
         source_path.push(&file);
 

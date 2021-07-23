@@ -7,15 +7,18 @@ use crate::readline;
 use crate::thiserror;
 
 use git2::{
-    build::RepoBuilder, Commit, Cred, Error, FetchOptions, IndexAddOption, Oid, PushOptions,
-    RemoteCallbacks, Repository, Signature, Tree, Config
+    build::RepoBuilder, Commit, Config, Cred, Error, FetchOptions, IndexAddOption, Oid,
+    PushOptions, RemoteCallbacks, Repository, Signature, Tree,
 };
 use paths::Paths;
-use std::{fs::File, io::{LineWriter, Write}};
-use std::{fs, path::Path};
-use uuid::Uuid;
 use std::path::PathBuf;
+use std::{fs, path::Path};
+use std::{
+    fs::File,
+    io::{LineWriter, Write},
+};
 use thiserror::Error;
+use uuid::Uuid;
 
 pub struct GitRepo {
     pub repo_path: PathBuf,
@@ -32,17 +35,14 @@ enum GitError<'a> {
     #[error("Failed to get parent commit: {0}")]
     RevParseError(git2::Error),
     #[error("Failed to get repo index")]
-    GetIndexErr
+    GetIndexErr,
 }
 
 impl GitRepo {
     pub fn new() -> Self {
         let git_config = Config::open_default().unwrap();
         let tmp_dir_name = format!("setman-tmp-{}", &Uuid::new_v4().to_string());
-        let repo_path: PathBuf = [
-            r"/tmp",
-            &tmp_dir_name,
-        ].iter().collect();
+        let repo_path: PathBuf = [r"/tmp", &tmp_dir_name].iter().collect();
 
         let upstream_url = match fs::read_to_string(Paths::default().upstream_path) {
             Ok(url) => url.replace('\n', ""),
@@ -96,11 +96,8 @@ impl GitRepo {
                 let tree = repo.find_tree(tree_id)?;
 
                 let parent = self.get_parent_commit(&repo).unwrap();
-                let new_commit_id = self.create_commit(
-                    &repo,
-                    &signature,
-                    &tree,
-                    &parent)
+                let new_commit_id = self
+                    .create_commit(&repo, &signature, &tree, &parent)
                     .unwrap();
 
                 self.save_commit_id(new_commit_id).unwrap();
@@ -157,7 +154,7 @@ impl GitRepo {
     fn gen_callbacks(&'_ self) -> RemoteCallbacks<'_> {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_str, _option, _cred_type| {
-           Cred::credential_helper(&self.git_config, &self.upstream_url, None)
+            Cred::credential_helper(&self.git_config, &self.upstream_url, None)
         });
         callbacks
     }

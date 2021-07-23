@@ -20,10 +20,10 @@ pub fn parse_args() -> ArgMatches<'static> {
                 .subcommand(SubCommand::with_name("verbose").help("Print verbose list"))
                 .arg(
                     Arg::with_name("regex")
-                    .help("Regex search")
-                    .short("r")
-                    .long("regex")
-                    .takes_value(true)
+                        .help("Regex search")
+                        .short("r")
+                        .long("regex")
+                        .takes_value(true),
                 ),
         )
         .subcommand(
@@ -103,9 +103,9 @@ pub fn parse_args() -> ArgMatches<'static> {
                 )
                 .arg(
                     Arg::with_name("push")
-                    .long("push")
-                    .takes_value(false)
-                    .help("Push directly after save")
+                        .long("push")
+                        .takes_value(false)
+                        .help("Push directly after save"),
                 ),
         )
         .subcommand(
@@ -146,7 +146,8 @@ pub fn parse_args() -> ArgMatches<'static> {
                     .index(1),
             ),
         )
-        .subcommand(SubCommand::with_name("compare")
-            .about("Checks if upstream is ahead of local save"))
+        .subcommand(
+            SubCommand::with_name("compare").about("Checks if upstream is ahead of local save"),
+        )
         .get_matches()
 }

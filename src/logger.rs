@@ -62,14 +62,18 @@ macro_rules! print_app {
         let app = $app;
         info!("{}", app.name);
         if $verbose {
-            println!("{}{} {:?}", " ".repeat(4), "Config path =>".bold().cyan(), app.config_path);
+            println!(
+                "{}{} {:?}",
+                " ".repeat(4),
+                "Config path =>".bold().cyan(),
+                app.config_path
+            );
             if &app.file_names.len() > &0 {
                 println!("{}{}", " ".repeat(4), "File names:".bold().green());
                 for file in &app.file_names {
                     println!("{}{} {}", " ".repeat(9), "=>".bold().green(), file);
                 }
             }
-
         }
     }};
 }

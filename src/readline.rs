@@ -13,12 +13,6 @@ pub fn read(message: &str) -> Result<String, Error> {
         .interact_text()
 }
 
-pub fn password(message: &str) -> Result<String, Error> {
-    Password::new()
-        .with_prompt(format!("{} {}", "[<]".bold().bright_cyan(), message))
-        .interact()
-}
-
 pub fn select(items: Vec<&str>) -> Result<usize, Error> {
     Select::new().items(&items).interact()
 }
