@@ -26,8 +26,8 @@ pub enum SetManAction<'a> {
     UninstallAll(&'a Vec<String>),
     SaveAll(&'a Vec<String>),
     New,
-    SyncUp,
-    SyncDown,
+    Push,
+    Pull,
 }
 
 pub enum ListOptions<'a> {
@@ -46,7 +46,7 @@ pub fn sync_settings(action: SetManAction) -> Result<(), SetManError> {
     let gitman = GitRepo::new();
     gitman.clone_repo(true);
     match action {
-        SetManAction::SyncUp => {
+        SetManAction::Push => {
             let dir_names = fileman::get_dir_names_in_path(&settings_path).unwrap();
             let mut apps = Apps::new();
             for dir_name in dir_names {
@@ -60,7 +60,7 @@ pub fn sync_settings(action: SetManAction) -> Result<(), SetManError> {
             gitman.push_changes().unwrap();
             Ok(())
         }
-        SetManAction::SyncDown => {
+        SetManAction::Pull => {
             let dirs_to_copy = gitman.get_dir_names();
             for dir_name in dirs_to_copy.clone() {
                 let mut source = gitman.repo_path.clone();

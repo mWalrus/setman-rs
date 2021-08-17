@@ -144,14 +144,11 @@ pub fn copy_files(file_names: Vec<String>, source: &Path, dest: &Path) -> IOResu
 
         // handle folder entries
 
-        println!("getting dest path");
         let mut dest_path = dest.to_path_buf();
         dest_path.push(&file);
 
-        println!("asserting source exists");
         // check if source file exists before attempting copy
         assert!(source_path.exists());
-        println!("copying");
         fs::copy(source_path, dest_path)?;
         info!("Copied {} to {:?}", &file.bold(), &dest);
     }

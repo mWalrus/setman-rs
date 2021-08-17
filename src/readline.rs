@@ -5,7 +5,7 @@
 use std::io::Error;
 
 use colored::*;
-use dialoguer::{Confirm, Input, Password, Select};
+use dialoguer::{Confirm, Input, Select};
 
 pub fn read(message: &str) -> Result<String, Error> {
     Input::<String>::new()

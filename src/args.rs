@@ -140,11 +140,10 @@ pub fn parse_args() -> ArgMatches<'static> {
                 .arg(Arg::with_name("app").help("Application to modify").index(1)),
         )
         .subcommand(
-            SubCommand::with_name("sync").about("Sync settings").arg(
-                Arg::with_name("direction")
-                    .help("Chose to sync from or to remote")
-                    .index(1),
-            ),
+            SubCommand::with_name("push").about("Push saved settings to remote"),
+        )
+        .subcommand(
+            SubCommand::with_name("pull").about("Pull saved settings from remote"),
         )
         .subcommand(
             SubCommand::with_name("compare").about("Checks if upstream is ahead of local save"),

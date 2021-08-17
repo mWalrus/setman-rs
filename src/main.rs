@@ -103,7 +103,7 @@ fn main() {
                 _ => {}
             };
             if sub_m.is_present("push") {
-                setman::sync_settings(SetManAction::SyncUp).unwrap();
+                setman::sync_settings(SetManAction::Push).unwrap();
             }
         }
         ("modify", Some(sub_m)) => {
@@ -115,14 +115,8 @@ fn main() {
             setman::app_action(SetManAction::Remove(&app_name));
         }
         ("new", Some(_sub_m)) => setman::app_action(SetManAction::New),
-        ("sync", Some(sub_m)) => {
-            let direction = sub_m.value_of("direction").unwrap().to_lowercase();
-            match direction.eq("up") {
-                true => setman::sync_settings(SetManAction::SyncUp),
-                false => setman::sync_settings(SetManAction::SyncDown),
-            }
-            .unwrap();
-        }
+        ("push", Some(_sub_m)) => setman::sync_settings(SetManAction::Push).unwrap(),
+        ("pull", Some(_sub_m)) => setman::sync_settings(SetManAction::Pull).unwrap(),
         ("compare", Some(_sub_m)) => {
             setman::compare_upstream();
         }
